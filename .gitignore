@@ -185,4 +185,4 @@ fabric.properties
 # idea folder, uncomment if you don't need it
 # .idea
 # temporaly data files
-Data/~$user-data.xlsx
+~$*
