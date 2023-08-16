@@ -6,7 +6,15 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 TOKEN = "6633230318:AAEPmoWn2SgZsenyflbzZEP2hJ_Fgg6-diM"
 DATA_FILE = "Data/user_data.xlsx"
 
-SELECT_ROLE, DRIVER_CAR, BROKER_CARGO, ADD_CARGO = range(4)
+SELECT_ROLE, DRIVER_DETAILS, BROKER_CARGO, ADD_CARGO = range(4)
+
+DRIVER_QUESTIONS = [
+    "Ваше полное имя?",
+    "Ваш возраст?",
+    "Какая у вас машина?",
+    "Из какого вы города?",
+    "На какую дистанцию готовы ездить? (в километрах)"
+]
 
 def start(update: Update, context: CallbackContext) -> int:
     keyboard = [['Брокер', 'Водитель']]
@@ -22,10 +30,27 @@ def select_role(update: Update, context: CallbackContext) -> int:
         update.message.reply_text("Отлично! Какой у вас груз?")
         return BROKER_CARGO
     elif role == "водитель":
-        update.message.reply_text("Какая у вас машина?")
-        return DRIVER_CAR
+        context.user_data["driver_question_index"] = 0
+        update.message.reply_text(DRIVER_QUESTIONS[0])
+        return DRIVER_DETAILS
     else:
         update.message.reply_text("Пожалуйста, выберите 'Брокер' или 'Водитель'.")
+
+def driver_details(update: Update, context: CallbackContext) -> int:
+    user_id = update.effective_user.id
+    current_question_index = context.user_data["driver_question_index"]
+
+    context.user_data[f"question_{current_question_index + 1}"] = update.message.text
+
+    if current_question_index + 1 < len(DRIVER_QUESTIONS):
+        next_question = DRIVER_QUESTIONS[current_question_index + 1]
+        context.user_data["driver_question_index"] = current_question_index + 1
+        update.message.reply_text(next_question)
+    else:
+        save_driver_info(user_id, context.user_data)
+        update.message.reply_text("Информация сохранена. Спасибо!", reply_markup=ReplyKeyboardRemove())
+        return ConversationHandler.END
+
 
 def save_broker_info(update: Update, context: CallbackContext) -> int:
     user_id = update.effective_user.id
@@ -43,21 +68,19 @@ def save_broker_info(update: Update, context: CallbackContext) -> int:
     update.message.reply_text("Информация сохранена. Спасибо!", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
-def save_driver_info(update: Update, context: CallbackContext) -> int:
-    user_id = update.effective_user.id
-    car = update.message.text
-
+def save_driver_info(user_id, user_data) -> None:
     if not os.path.exists(DATA_FILE):
-        df = pd.DataFrame(columns=["User ID", "Role", "Cargo", "Car"])
+        df = pd.DataFrame(columns=["User ID"] + [f"Question {i + 1}" for i in range(len(DRIVER_QUESTIONS))])
     else:
         df = pd.read_excel(DATA_FILE)
 
-    new_row = pd.DataFrame({"User ID": [user_id], "Role": ["Водитель"], "Cargo": [""], "Car": [car]})
-    df = pd.concat([df, new_row], ignore_index=True)
-    df.to_excel(DATA_FILE, index=False)
+    new_row = {"User ID": user_id}
+    for i, question in enumerate(DRIVER_QUESTIONS):
+        new_row[f"Question {i + 1}"] = user_data.get(f"question_{i + 1}", "")
 
-    update.message.reply_text("Информация сохранена. Спасибо!", reply_markup=ReplyKeyboardRemove())
-    return ConversationHandler.END
+    new_row_df = pd.DataFrame([new_row])
+    df = pd.concat([df, new_row_df], ignore_index=True)
+    df.to_excel(DATA_FILE, index=False)
 
 def add_cargo(update: Update, context: CallbackContext) -> int:
     user_id = update.effective_user.id
@@ -88,7 +111,7 @@ def main() -> None:
         states={
             SELECT_ROLE: [MessageHandler(Filters.text & ~Filters.command, select_role)],
             BROKER_CARGO: [MessageHandler(Filters.text & ~Filters.command, save_broker_info)],
-            DRIVER_CAR: [MessageHandler(Filters.text & ~Filters.command, save_driver_info)],
+            DRIVER_DETAILS: [MessageHandler(Filters.text & ~Filters.command, driver_details)],
             ADD_CARGO: [MessageHandler(Filters.text & ~Filters.command, add_cargo)],
         },
         fallbacks=[MessageHandler(Filters.command, cancel)],
