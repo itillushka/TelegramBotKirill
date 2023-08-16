@@ -186,3 +186,5 @@ fabric.properties
 # .idea
 # temporaly data files
 ~$*
+
+.idea/inspectionProfiles
