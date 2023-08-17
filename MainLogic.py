@@ -5,8 +5,10 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Conve
 
 TOKEN = "6633230318:AAEPmoWn2SgZsenyflbzZEP2hJ_Fgg6-diM"
 DATA_FILE = "Data/user_data.xlsx"
+BROKER_PASSWORD = "1234"
+AUTHORIZED_BROKERS = set()
 
-SELECT_ROLE, DRIVER_DETAILS, BROKER_CARGO, ADD_CARGO = range(4)
+SELECT_ROLE, DRIVER_DETAILS, BROKER_CARGO, ADD_CARGO, VERIFY_PASSWORD = range(5)
 
 DRIVER_QUESTIONS = [
     "Ваше полное имя?",
@@ -27,14 +29,15 @@ def select_role(update: Update, context: CallbackContext) -> int:
     context.user_data["role"] = role
 
     if role == "брокер":
-        update.message.reply_text("Отлично! Какой у вас груз?")
-        return BROKER_CARGO
+        update.message.reply_text("Введите пароль для доступа к роли 'брокер':")
+        return ADD_CARGO
     elif role == "водитель":
         context.user_data["driver_question_index"] = 0
         update.message.reply_text(DRIVER_QUESTIONS[0])
         return DRIVER_DETAILS
     else:
         update.message.reply_text("Пожалуйста, выберите 'Брокер' или 'Водитель'.")
+
 
 def driver_details(update: Update, context: CallbackContext) -> int:
     user_id = update.effective_user.id
@@ -85,19 +88,27 @@ def save_driver_info(user_id, user_data) -> None:
 def add_cargo(update: Update, context: CallbackContext) -> int:
     user_id = update.effective_user.id
     cargo = update.message.text
+    role = context.user_data.get("role")
 
-    if not os.path.exists(DATA_FILE):
-        df = pd.DataFrame(columns=["User ID", "Role", "Cargo", "Car"])
+    if role == "брокер":
+        if context.user_data.get("authorized_broker"):
+            save_broker_info(update, context)
+            return ConversationHandler.END
+        else:
+            update.message.reply_text("Введите пароль для доступа к роли 'брокер':")
+            return VERIFY_PASSWORD
     else:
-        df = pd.read_excel(DATA_FILE)
+        update.message.reply_text("Пожалуйста, выберите 'Брокер' или 'Водитель'.")
 
-    new_row = pd.DataFrame({"User ID": [user_id], "Role": ["Брокер"], "Cargo": [cargo], "Car": [""]})
-    df = pd.concat([df, new_row], ignore_index=True)
-    df.to_excel(DATA_FILE, index=False)
-
-    update.message.reply_text("Груз добавлен. Спасибо!")
-    return ConversationHandler.END
-
+def verify_password(update: Update, context: CallbackContext) -> int:
+    password = update.message.text.strip()
+    if password == BROKER_PASSWORD:
+        context.user_data["authorized_broker"] = True
+        update.message.reply_text("Пароль верен. Теперь введите ваш груз:")
+        return ADD_CARGO
+    else:
+        update.message.reply_text("Неверный пароль. Выберите 'Брокер' или 'Водитель'.")
+        return SELECT_ROLE
 def cancel(update: Update, context: CallbackContext) -> int:
     update.message.reply_text("Операция отменена.", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
@@ -110,7 +121,8 @@ def main() -> None:
         entry_points=[CommandHandler('start', start)],
         states={
             SELECT_ROLE: [MessageHandler(Filters.text & ~Filters.command, select_role)],
-            BROKER_CARGO: [MessageHandler(Filters.text & ~Filters.command, save_broker_info)],
+            VERIFY_PASSWORD: [MessageHandler(Filters.text & ~Filters.command, verify_password)],
+            BROKER_CARGO: [MessageHandler(Filters.text & ~Filters.command, add_cargo)],
             DRIVER_DETAILS: [MessageHandler(Filters.text & ~Filters.command, driver_details)],
             ADD_CARGO: [MessageHandler(Filters.text & ~Filters.command, add_cargo)],
         },
@@ -124,3 +136,4 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+
