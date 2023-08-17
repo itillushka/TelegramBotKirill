@@ -1,130 +1,101 @@
-import os
-import pandas as pd
 import telebot
+import openpyxl
 from telebot import types
 
-TOKEN = "6633230318:AAEPmoWn2SgZsenyflbzZEP2hJ_Fgg6-diM"
-DATA_FILE = "Data/user_data.xlsx"
-BROKER_PASSWORD = "1234"
-AUTHORIZED_BROKERS = set()
-
+TOKEN = '6633230318:AAEPmoWn2SgZsenyflbzZEP2hJ_Fgg6-diM'
+broker_password = "1234"
 bot = telebot.TeleBot(TOKEN)
 
-DRIVER_QUESTIONS = [
-    "Ваше полное имя?",
-    "Ваш возраст?",
-    "Какая у вас машина?",
-    "Из какого вы города?",
-    "На какую дистанцию готовы ездить? (в километрах)"
-]
+# Словарь для хранения данных о пользователях
+user_data = {}
+waiting_for_password = {}
 
-
+# Обработчик команды /start
 @bot.message_handler(commands=['start'])
 def start(message):
-    keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-    buttons = [types.KeyboardButton(text="Брокер"), types.KeyboardButton(text="Водитель")]
-    keyboard.add(*buttons)
-    bot.send_message(message.chat.id, "Привет! Выберите вашу роль:", reply_markup=keyboard)
-    bot.register_next_step_handler(message, select_role)
+    markup = types.ReplyKeyboardMarkup(row_width=2)
+    broker_button = types.KeyboardButton("Брокер")
+    driver_button = types.KeyboardButton("Водитель")
+    markup.add(broker_button, driver_button)
+    bot.send_message(message.chat.id, "Выберите вашу роль:", reply_markup=markup)
 
 
-def select_role(message):
+# Обработчик выбора роли с кнопками
+@bot.message_handler(func=lambda message: message.text == "Брокер" or message.text == "Водитель")
+def handle_role_choice(message):
     user_id = message.from_user.id
-    role = message.text.lower()
+    role = message.text
 
-    if role == "брокер":
-        bot.send_message(user_id, "Введите пароль для доступа к роли 'брокер':")
-        bot.register_next_step_handler(message, verify_password)
-    elif role == "водитель":
-        bot.send_message(user_id, DRIVER_QUESTIONS[0])
-        bot.register_next_step_handler(message, driver_details)
-    else:
-        keyboard = types.ReplyKeyboardRemove()
-        bot.send_message(user_id, "Пожалуйста, выберите 'Брокер' или 'Водитель'.", reply_markup=keyboard)
+    if role == "Брокер":
+        user_data[user_id] = {"role": "Брокер"}
+        waiting_for_password[user_id] = True
+        bot.send_message(user_id, "Введите пароль для доступа к роли брокера:")
+    elif role == "Водитель":
+        user_data[user_id] = {"role": "Водитель"}
+        bot.send_message(user_id, "Отлично! Пожалуйста, ответьте на несколько вопросов.")
+        bot.send_message(user_id, "Ваше полное имя?")
+        bot.register_next_step_handler(message, ask_age)
 
-
-def driver_details(message):
+@bot.message_handler(func=lambda message: waiting_for_password.get(message.from_user.id))
+def check_broker_password(message):
     user_id = message.from_user.id
-    current_question_index = message.chat.id
+    password = message.text
 
-    if not hasattr(bot, 'user_data'):
-        bot.user_data = {}
-    if "driver_question_index" not in bot.user_data:
-        bot.user_data["driver_question_index"] = 0
-    if "question_data" not in bot.user_data:
-        bot.user_data["question_data"] = {}
-
-    bot.user_data["question_data"][current_question_index + 1] = message.text
-
-    if current_question_index + 1 < len(DRIVER_QUESTIONS):
-        next_question = DRIVER_QUESTIONS[current_question_index + 1]
-        bot.user_data["driver_question_index"] = current_question_index + 1
-        bot.send_message(user_id, next_question)
-        bot.register_next_step_handler(message, driver_details)
+    if password == broker_password:
+        add_to_excel(user_id, **user_data[user_id])
+        bot.send_message(user_id, "Пароль верный. Теперь вы брокер.")
     else:
-        save_driver_info(user_id, bot.user_data)
-        bot.send_message(user_id, "Информация сохранена. Спасибо!")
-        bot.user_data = {}
-
-
-def save_broker_info(user_id, cargo):
-    if not os.path.exists(DATA_FILE):
-        df = pd.DataFrame(columns=["User ID", "Role", "Cargo", "Car"])
-    else:
-        df = pd.read_excel(DATA_FILE)
-
-    new_row = pd.DataFrame({"User ID": [user_id], "Role": ["Брокер"], "Cargo": [cargo], "Car": [""]})
-    df = pd.concat([df, new_row], ignore_index=True)
-    df.to_excel(DATA_FILE, index=False)
-
-    bot.send_message(user_id, "Информация сохранена. Спасибо!")
-
-
-def save_driver_info(user_id, user_data):
-    if not os.path.exists(DATA_FILE):
-        df = pd.DataFrame(columns=["User ID"] + [f"Question {i + 1}" for i in range(len(DRIVER_QUESTIONS))])
-    else:
-        df = pd.read_excel(DATA_FILE)
-
-    new_row = {"User ID": user_id}
-    for i, question in enumerate(DRIVER_QUESTIONS):
-        new_row[f"Question {i + 1}"] = user_data["question_data"].get(i + 1, "")
-
-    new_row_df = pd.DataFrame([new_row])
-    df = pd.concat([df, new_row_df], ignore_index=True)
-    df.to_excel(DATA_FILE, index=False)
-
-
-def verify_password(message):
+        bot.send_message(user_id, "Пароль неверный. Попробуйте еще раз или выберите другую роль.")
+def ask_age(message):
     user_id = message.from_user.id
-    password = message.text.strip()
-    if password == BROKER_PASSWORD:
-        bot.user_data["authorized_broker"] = True
-        bot.send_message(user_id, "Пароль верен. Теперь введите ваш груз:")
-        bot.register_next_step_handler(message, add_cargo)
-    else:
-        keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-        buttons = [types.KeyboardButton(text="Брокер"), types.KeyboardButton(text="Водитель")]
-        keyboard.add(*buttons)
-        bot.send_message(user_id, "Неверный пароль. Выберите 'Брокер' или 'Водитель'.", reply_markup=keyboard)
+    user_data[user_id]["name"] = message.text
+
+    bot.send_message(message.chat.id, "Ваш возраст?")
+    bot.register_next_step_handler(message, ask_car)
 
 
-def add_cargo(message):
+def ask_car(message):
     user_id = message.from_user.id
-    cargo = message.text
-    role = bot.user_data.get("role")
+    user_data[user_id]["age"] = message.text
 
-    if role == "брокер":
-        if bot.user_data.get("authorized_broker"):
-            save_broker_info(user_id, cargo)
-            bot.user_data = {}
-        else:
-            bot.send_message(user_id, "Введите пароль для доступа к роли 'брокер':")
-            bot.register_next_step_handler(message, verify_password)
-    else:
-        keyboard = types.ReplyKeyboardRemove()
-        bot.send_message(user_id, "Пожалуйста, выберите 'Брокер' или 'Водитель'.", reply_markup=keyboard)
+    bot.send_message(message.chat.id, "Какая у вас машина?")
+    bot.register_next_step_handler(message, ask_city)
 
 
-if __name__ == "__main__":
-    bot.polling(none_stop=True)
+def ask_city(message):
+    user_id = message.from_user.id
+    user_data[user_id]["car"] = message.text
+
+    bot.send_message(message.chat.id, "Из какого вы города?")
+    bot.register_next_step_handler(message, ask_distance)
+
+
+def ask_distance(message):
+    user_id = message.from_user.id
+    user_data[user_id]["city"] = message.text
+
+    bot.send_message(message.chat.id, "На какую дистанцию готовы ездить? (в километрах)")
+    bot.register_next_step_handler(message, save_driver_info)
+
+
+def save_driver_info(message):
+    user_id = message.from_user.id
+    user_data[user_id]["distance"] = message.text
+
+    # Добавление информации в Excel таблицу
+    add_to_excel(user_id, **user_data[user_id])
+
+    bot.send_message(message.chat.id, "Спасибо! Ваша информация сохранена.")
+
+
+def add_to_excel(user_id, **data):
+    workbook = openpyxl.load_workbook('Data/user_data.xlsx')
+    sheet = workbook.active
+
+    sheet.append([user_id, data.get("role"), data.get("name"), data.get("age"), data.get("car"), data.get("city"),
+                  data.get("distance")])
+    workbook.save('Data/user_data.xlsx')
+    workbook.close()
+
+
+bot.polling()
