@@ -17,13 +17,13 @@ chosen_cargo = {}
 def is_user_registered(user_id):
     workbook = openpyxl.load_workbook(DATA)
     sheet = workbook.active
-    for row in sheet.iter_rows(min_row=1, values_only=True):
-        print(row)
+    for row in sheet.iter_rows(min_row=2, values_only=True):
         if row[0] == user_id:
+            role = row[1]
             workbook.close()
-            return True
+            return True, role
     workbook.close()
-    return False
+    return False, None
 
 def get_user_data(user_id):
     workbook = openpyxl.load_workbook(DATA)
@@ -57,26 +57,35 @@ def start(message):
     bot.send_message(message.chat.id, "Приветствую в нашем боте! Пожалуйста выберите раздел:", reply_markup=markup)
 
 
-@bot.callback_query_handler(func=lambda call: call.data in ["broker", "driver"])
-def handle_role_choice(call):
+@bot.callback_query_handler(func=lambda call: call.data == "broker")
+def handle_broker_role(call):
     user_id = call.from_user.id
-    role = call.data
-    markup = types.InlineKeyboardMarkup(row_width=1)
+    registered, user_role = is_user_registered(user_id)
 
-    if is_user_registered(user_id):
-        my_data_button = types.InlineKeyboardButton("Мои данные", callback_data="my_data")
-        view_cargo_button = types.InlineKeyboardButton("Посмотреть грузы", callback_data="view_cargo")
-        markup.add(my_data_button, view_cargo_button)
-
-        bot.send_message(user_id, "Добро пожаловать в меню водителя", reply_markup=markup)
-        return
-
-    if role == "broker":
+    if registered and user_role == "Брокер":
+        bot.send_message(user_id, "Добро пожаловать в меню диспетчера")
+    elif not registered:
         user_data[user_id] = {"role": "Брокер"}
         waiting_for_password[user_id] = True
         bot.send_message(user_id, "Введите пароль для доступа к роли брокера:")
-    elif role == "driver":
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "driver")
+def handle_driver_role(call):
+    user_id = call.from_user.id
+    registered, user_role = is_user_registered(user_id)
+
+    if registered and user_role == "Водитель":
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        my_data_button = types.InlineKeyboardButton("Мои данные", callback_data="my_data")
+        view_cargo_button = types.InlineKeyboardButton("Посмотреть грузы", callback_data="view_cargo")
+        markup.add(my_data_button, view_cargo_button)
+        bot.send_message(user_id, "Добро пожаловать в меню водителя", reply_markup=markup)
+    elif registered and user_role == "Брокер":
+        bot.send_message(user_id, "Вы не имеете доступа к роли Перевозчика.")
+    elif not registered:
         start_button = types.InlineKeyboardButton("[🟢 Начать ]", callback_data="start_driver")
+        markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(start_button)
         bot.send_message(user_id, "Добро пожаловать в панель новых водителей!", reply_markup=markup)
 
