@@ -265,6 +265,57 @@ def add_to_excel(user_id, **data):
                   data.get("distance")])
     workbook.save(DATA)
     workbook.close()
+@bot.callback_query_handler(func=lambda call: call.data == "cargo")
+def handle_cargo(call):
+    user_id = call.from_user.id
+    user_data[user_id] = {}
+    bot.send_message(user_id, "Введите данные о грузе.\n\n1. Откуда?")
 
+    bot.register_next_step_handler(call.message, ask_cargo_from)
+
+def ask_cargo_from(message):
+    user_id = message.from_user.id
+    user_data[user_id]["cargo_from"] = message.text
+    bot.send_message(user_id, "2. Куда?")
+    bot.register_next_step_handler(message, ask_cargo_to)
+
+def ask_cargo_to(message):
+    user_id = message.from_user.id
+    user_data[user_id]["cargo_to"] = message.text
+    bot.send_message(user_id, "3. Дистанция (в километрах)?")
+    bot.register_next_step_handler(message, ask_cargo_distance)
+
+def ask_cargo_distance(message):
+    user_id = message.from_user.id
+    user_data[user_id]["cargo_distance"] = message.text
+    bot.send_message(user_id, "4. Вес груза (в кг)?")
+    bot.register_next_step_handler(message, ask_cargo_weight)
+
+def ask_cargo_weight(message):
+    user_id = message.from_user.id
+    user_data[user_id]["cargo_weight"] = message.text
+    bot.send_message(user_id, "5. Оплата (в рублях)?")
+    bot.register_next_step_handler(message, save_cargo_info)
+
+def save_cargo_info(message):
+    user_id = message.from_user.id
+    cargo_info = {
+        "from_location": user_data[user_id]["cargo_from"],
+        "to_location": user_data[user_id]["cargo_to"],
+        "distance": user_data[user_id]["cargo_distance"],
+        "weight": user_data[user_id]["cargo_weight"],
+        "payment": message.text
+    }
+
+    add_cargo_to_excel(**cargo_info)
+    bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")
+
+def add_cargo_to_excel(from_location, to_location, distance, weight, payment):
+    workbook = openpyxl.load_workbook(CARGO)
+    sheet = workbook.active
+
+    sheet.append([from_location, to_location, distance, weight, payment])
+    workbook.save(CARGO)
+    workbook.close()
 
 bot.polling()
