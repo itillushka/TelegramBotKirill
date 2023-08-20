@@ -24,14 +24,35 @@ def is_user_registered(user_id):
             return True
     workbook.close()
     return False
+
+def get_user_data(user_id):
+    workbook = openpyxl.load_workbook(DATA)
+    sheet = workbook.active
+    user_data = {}
+
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        if row[0] == user_id:
+            user_data = {
+                "role": row[1],
+                "name": row[2],
+                "age": row[3],
+                "car": row[4],
+                "city": row[5],
+                "distance": row[6]
+            }
+            break
+
+    workbook.close()
+    return user_data
+
+
 # Обработчик команды /start
 @bot.message_handler(commands=['start', 'menu'])
 def start(message):
-
     markup = types.InlineKeyboardMarkup(row_width=1)
-    broker_button = types.InlineKeyboardButton("[🚚 Перевозчикам]",callback_data="driver")
-    driver_button = types.InlineKeyboardButton("[ 📞 Диспетчерам]",callback_data="broker")
-    cargo_button = types.InlineKeyboardButton("[ 📦 Отправить груз]",callback_data="cargo")
+    broker_button = types.InlineKeyboardButton("[🚚 Перевозчикам]", callback_data="driver")
+    driver_button = types.InlineKeyboardButton("[ 📞 Диспетчерам]", callback_data="broker")
+    cargo_button = types.InlineKeyboardButton("[ 📦 Отправить груз]", callback_data="cargo")
     markup.add(broker_button, driver_button, cargo_button)
     bot.send_message(message.chat.id, "Приветствую в нашем боте! Пожалуйста выберите раздел:", reply_markup=markup)
 
@@ -43,7 +64,6 @@ def handle_role_choice(call):
     markup = types.InlineKeyboardMarkup(row_width=1)
 
     if is_user_registered(user_id):
-
         my_data_button = types.InlineKeyboardButton("Мои данные", callback_data="my_data")
         view_cargo_button = types.InlineKeyboardButton("Посмотреть грузы", callback_data="view_cargo")
         markup.add(my_data_button, view_cargo_button)
@@ -58,7 +78,7 @@ def handle_role_choice(call):
     elif role == "driver":
         start_button = types.InlineKeyboardButton("[🟢 Начать ]", callback_data="start_driver")
         markup.add(start_button)
-        bot.send_message(user_id,"Добро пожаловать в панель новых водителей!",reply_markup=markup)
+        bot.send_message(user_id, "Добро пожаловать в панель новых водителей!", reply_markup=markup)
 
 
 @bot.callback_query_handler(func=lambda call: call.data in ["start_driver"])
@@ -71,13 +91,22 @@ def start_driver(call):
         bot.send_message(user_id, "Ваше полное имя?")
         bot.register_next_step_handler(call.message, ask_age)
 
+
 @bot.callback_query_handler(func=lambda call: call.data in ["my_data", "view_cargo"])
 def handle_driver_choice(call):
     user_id = call.from_user.id
     choice = call.data
 
     if choice == "my_data":
-        bot.send_message(user_id, "Данные")
+        user_data = get_user_data(user_id)
+
+        if user_data:
+            response = "👤 Ваши данные:\n"
+            for key, value in user_data.items():
+                response += f"✅ {key.capitalize()}: {value}\n"
+            bot.send_message(user_id, response)
+        else:
+            bot.send_message(user_id, "🚫 Ваши данные не найдены.")
     elif choice == "view_cargo":
         cargo_workbook = openpyxl.load_workbook(CARGO)
         cargo_sheet = cargo_workbook.active
@@ -107,6 +136,7 @@ def handle_driver_choice(call):
 
 
 
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith("cargo_"))
 def handle_cargo_choice(call):
     user_id = call.from_user.id
@@ -126,14 +156,13 @@ def handle_cargo_choice(call):
                 add_chosen_cargo(user_id, cargo_row)
 
             chosen_cargo[user_id] = []  # Очищаем список выбранных грузов
-            bot.send_message(user_id, "Спасибо за выбор! Мы с вами свяжемся.")
+            bot.send_message(user_id, "Спасибо за выбор! Мы с вами свяжемся. 🚚")
         else:
-            bot.send_message(user_id, "Вы еще не выбрали грузы.")
+            bot.send_message(user_id, "Вы еще не выбрали грузы. 🚫")
     else:
         # Иначе, добавляем выбранный груз
         chosen_cargo[user_id].append(cargo_key)
-        bot.answer_callback_query(call.id, text="Груз добавлен в выбранные!")
-
+        bot.answer_callback_query(call.id, text="Груз добавлен в выбранные! ✅")
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "finish")
@@ -147,9 +176,9 @@ def handle_finish(call):
             add_chosen_cargo(user_id, cargo_row)
 
         chosen_cargo[user_id] = []  # Очищаем список выбранных грузов
-        bot.send_message(user_id, "Спасибо за выбор! Мы с вами свяжемся.")
+        bot.send_message(user_id, "Спасибо за выбор! Мы с вами свяжемся. 🚚")
     else:
-        bot.send_message(user_id, "Вы еще не выбрали грузы.")
+        bot.send_message(user_id, "Вы еще не выбрали грузы. 🚫")
 
 def add_chosen_cargo(user_id, cargo_row):
     workbook = openpyxl.load_workbook(DATA)
@@ -184,6 +213,7 @@ def check_broker_password(message):
 
     else:
         bot.send_message(user_id, "Пароль неверный. Попробуйте еще раз или выберите другую роль.")
+
 
 def ask_age(message):
     user_id = message.from_user.id
