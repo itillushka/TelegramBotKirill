@@ -1,13 +1,22 @@
 import telebot
-import openpyxl
 from telebot import types
-import webbrowser
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 TOKEN = '6633230318:AAEPmoWn2SgZsenyflbzZEP2hJ_Fgg6-diM'
 broker_password = "1234"
 bot = telebot.TeleBot(TOKEN)
-DATA = "Data/user_data.xlsx"
-CARGO = "Data/cargo_data.xlsx"
+# Путь к файлу JSON с учетными данными для доступа к Google Таблицам
+JSON_PATH = 'credentials.json'
+
+# Создаем объект для работы с Google Таблицами
+scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name(JSON_PATH, scope)
+client = gspread.authorize(creds)
+
+# ID Google Таблицы (взять из URL)
+SPREADSHEET_ID_USER_DATA = '1Ru0mMLA8L6GyTPjvrFXIZ-dGN6u_CaHVsZiHVJo9R6w'
+SPREADSHEET_ID_CARGO_DATA = '1Eph_4O0fJzbAITj98-1aigGct9YPyizM7WZ7dCDC-Pw'
 
 # Словарь для хранения данных о пользователях
 user_data = {}
@@ -15,43 +24,42 @@ waiting_for_password = {}
 chosen_cargo = {}
 driver_data = {}
 
+
 def is_user_registered(user_id):
-    workbook = openpyxl.load_workbook(DATA)
-    sheet = workbook.active
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        if row[0] == user_id:
-            role = row[1]
-            workbook.close()
-            return True, role
-    workbook.close()
-    return False, None
+    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
+    user_ids = sheet.col_values(1)[1:]
+
+    if str(user_id) in user_ids:
+        user_row = user_ids.index(str(user_id)) + 2  # Индекс строки с user_id, учитывая заголовок в первой строке
+        user_role = sheet.cell(user_row, 2).value  # Значение ячейки с ролью пользователя
+        return True, user_role
+    else:
+        return False, None
 
 
 def get_user_data(user_id):
-    workbook = openpyxl.load_workbook(DATA)
-    sheet = workbook.active
-    user_data = {}
-
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        if row[0] == user_id:
-            user_data = {
-                "role": row[1],
-                "name": row[2],
-                "phone": row[3],
-                "car_plate": row[4],
-                "cargo_capacity": row[5],
-                "dimensions": row[6],
-                "body_type": row[7],
-                "city": row[8],
-                "distance": row[9],
-                "ip_or_self_employed": row[10],
-                "rent_or_own_car": row[11],
-                "cargo_loading_type": row[12]  # Добавлен столбец для типа загрузки
-            }
-            break
-
-    workbook.close()
-    return user_data
+    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
+    user_cell = sheet.find(str(user_id))
+    if user_cell:
+        user_row = user_cell.row
+        user_data_row = sheet.row_values(user_row)
+        user_data = {
+            "role": user_data_row[1],
+            "name": user_data_row[2],
+            "phone": user_data_row[3],
+            "car_plate": user_data_row[4],
+            "cargo_capacity": user_data_row[5],
+            "dimensions": user_data_row[6],
+            "body_type": user_data_row[7],
+            "city": user_data_row[8],
+            "distance": user_data_row[9],
+            "ip_or_self_employed": user_data_row[10],
+            "rent_or_own_car": user_data_row[11],
+            "cargo_loading_type": user_data_row[12]
+        }
+        return user_data
+    else:
+        return {}
 
 
 # Обработчик команды /start
@@ -68,7 +76,8 @@ def start(message):
 @bot.callback_query_handler(func=lambda call: call.data == "broker")
 def handle_broker_role(call):
     user_id = call.from_user.id
-    bot.send_message(user_id, "Спасибо, что хотите пополнить нашу команду диспетчеров!\nПрошу вас заполнить Гугл форму, чтобы мы узнали о вас побольше!")
+    bot.send_message(user_id,
+                     "Спасибо, что хотите пополнить нашу команду диспетчеров!\nПрошу вас заполнить Гугл форму, чтобы мы узнали о вас побольше!")
 
     # Создаем кнопку для перенаправления на сайт Google
     markup = types.InlineKeyboardMarkup(row_width=1)
@@ -127,14 +136,14 @@ def handle_driver_choice(call):
         else:
             bot.send_message(user_id, "🚫 Ваши данные не найдены.")
     elif choice == "view_cargo":
-        cargo_workbook = openpyxl.load_workbook(CARGO)
-        cargo_sheet = cargo_workbook.active
+        sheet = client.open_by_key(SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)  # Открываем первый лист
 
         cargo_buttons = []
-        for row in cargo_sheet.iter_rows(min_row=2, values_only=True):
+        cargo_data = sheet.get_all_values()[1:]  # Пропускаем заголовок
+
+        for row in cargo_data:
             from_location = row[0]
             to_location = row[1]
-
             cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",
                                                             callback_data=f"cargo_{from_location}_{to_location}"))
 
@@ -192,24 +201,22 @@ def handle_finish(call):
         bot.send_message(user_id, "Вы еще не выбрали грузы. 🚫")
 
 
+
 def add_chosen_cargo(user_id, cargo_row):
-    workbook = openpyxl.load_workbook(DATA)
-    sheet = workbook.active
+    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
 
     # Найдем строку, где user_id совпадает
-    for idx, row in enumerate(sheet.iter_rows(min_row=2, values_only=True), start=2):
-        if row[0] == user_id:
+    for idx, row in enumerate(sheet.get_all_values(), start=1):
+        if row[0] == str(user_id):
             user_row = idx  # Индекс строки, где нашли совпадение
 
-            # Получим номер последнего заполненного столбца в текущей строке
-            last_column = sheet.max_column
+            # Получаем номер последнего столбца выбранных грузов
+            last_cargo_column = len(row)
 
-            # Запишем груз в следующий столбец
-            sheet.cell(row=user_row, column=last_column + 1, value=cargo_row)
+            # Добавляем данные о выбранном грузе в следующий столбец
+            sheet.update_cell(user_row, last_cargo_column + 1, cargo_row)
             break  # Прерываем цикл, так как нашли нужную строку
 
-    workbook.save(DATA)
-    workbook.close()
 
 
 def ask_phone(message):
@@ -288,25 +295,21 @@ def save_driver_info(message):
     user_id = message.from_user.id
     driver_data[user_id]["car_ownership"] = message.text
 
-    # Добавление информации о водителе в Excel таблицу
-    add_driver_to_excel(user_id, **driver_data[user_id])
-
     bot.send_message(message.chat.id, "Какой у вас тип загрузки? Задний/верхний/боковой?")
     bot.register_next_step_handler(message, ask_cargo_loading_type)
+
 
 def ask_cargo_loading_type(message):
     user_id = message.from_user.id
     driver_data[user_id]["cargo_loading_type"] = message.text
 
-    add_driver_to_excel(user_id, **driver_data[user_id])  # Добавляем данные о водителе в таблицу
+    add_driver_to_google_sheets(user_id, **driver_data[user_id])  # Добавляем данные о водителе в таблицу
     bot.send_message(user_id, "Спасибо! Ваши данные сохранены.")
 
 
-def add_driver_to_excel(user_id, **data):
-    workbook = openpyxl.load_workbook(DATA)
-    sheet = workbook.active
+def add_driver_to_google_sheets(user_id, **data):
+    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)  # Открываем первый лист
 
-    # Извлекаем данные о водителе из словаря и добавляем в строку
     driver_info = [
         user_id,
         "Водитель",
@@ -320,14 +323,10 @@ def add_driver_to_excel(user_id, **data):
         data["distance_to_travel"],
         data["employment_type"],
         data["car_ownership"],
-        data["cargo_loading_type"]  # Добавлен столбец для типа загрузки
+        data["cargo_loading_type"]
     ]
-    sheet.append(driver_info)
 
-    workbook.save(DATA)
-    workbook.close()
-
-
+    sheet.append_row(driver_info)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "cargo")
@@ -377,17 +376,15 @@ def save_cargo_info(message):
         "payment": message.text
     }
 
-    add_cargo_to_excel(**cargo_info)
+    add_cargo_to_google_sheets(**cargo_info)
     bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")
 
 
-def add_cargo_to_excel(from_location, to_location, distance, weight, payment):
-    workbook = openpyxl.load_workbook(CARGO)
-    sheet = workbook.active
+def add_cargo_to_google_sheets(from_location, to_location, distance, weight, payment):
+    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(1)  # Открываем второй лист
 
-    sheet.append([from_location, to_location, distance, weight, payment])
-    workbook.save(CARGO)
-    workbook.close()
+    cargo_info = [from_location, to_location, distance, weight, payment]
+    sheet.append_row(cargo_info)
 
 
 bot.polling()
