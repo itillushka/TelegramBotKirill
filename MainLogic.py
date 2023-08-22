@@ -18,7 +18,7 @@ client = gspread.authorize(creds)
 SPREADSHEET_ID_USER_DATA = '1Ru0mMLA8L6GyTPjvrFXIZ-dGN6u_CaHVsZiHVJo9R6w'
 SPREADSHEET_ID_CARGO_DATA = '1Eph_4O0fJzbAITj98-1aigGct9YPyizM7WZ7dCDC-Pw'
 
-# Словарь для хранения данных о пользователях
+# Словари для хранения данных о пользователях
 user_data = {}
 waiting_for_password = {}
 chosen_cargo = {}
@@ -142,10 +142,11 @@ def handle_driver_choice(call):
         cargo_data = sheet.get_all_values()[1:]  # Пропускаем заголовок
 
         for row in cargo_data:
-            from_location = row[0]
-            to_location = row[1]
+            cargo_id = row[0]
+            from_location = row[1]
+            to_location = row[2]
             cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",
-                                                            callback_data=f"cargo_{from_location}_{to_location}"))
+                                                            callback_data=f"cargo_{cargo_id}"))
 
         # Добавляем кнопку "Готово" в конце списка грузов
         finish_button = types.InlineKeyboardButton("Готово✅", callback_data="finish")
@@ -160,13 +161,12 @@ def handle_driver_choice(call):
 @bot.callback_query_handler(func=lambda call: call.data.startswith("cargo_"))
 def handle_cargo_choice(call):
     user_id = call.from_user.id
-    cargo_data = call.data.split("_")[1:]  # Разделяем данные о грузе из callback_data
-    cargo_key = "_".join(cargo_data)  # Создаем уникальный ключ для груза
+    cargo_id = call.data.split("_")[1]  # Получаем идентификатор груза из callback_data
 
     if user_id not in chosen_cargo:
         chosen_cargo[user_id] = []
 
-    if cargo_key == "finish":
+    if cargo_id == "finish":
         # Если выбрана кнопка "Готово", обрабатываем завершение выбора грузов
         if user_id in chosen_cargo and chosen_cargo[user_id]:
             chosen_cargo_rows = chosen_cargo[user_id]
@@ -181,7 +181,7 @@ def handle_cargo_choice(call):
             bot.send_message(user_id, "Вы еще не выбрали грузы. 🚫")
     else:
         # Иначе, добавляем выбранный груз
-        chosen_cargo[user_id].append(cargo_key)
+        chosen_cargo[user_id].append(cargo_id)
         bot.answer_callback_query(call.id, text="Груз добавлен в выбранные! ✅")
 
 
@@ -189,11 +189,11 @@ def handle_cargo_choice(call):
 def handle_finish(call):
     user_id = call.from_user.id
     if user_id in chosen_cargo and chosen_cargo[user_id]:
-        chosen_cargo_rows = chosen_cargo[user_id]
+        chosen_cargo_ids = chosen_cargo[user_id]  # Получаем идентификаторы грузов
 
-        # Добавление номеров строк выбранных грузов в столбец "Груз и номер груза"
-        for cargo_row in chosen_cargo_rows:
-            add_chosen_cargo(user_id, cargo_row)
+        # Добавление идентификаторов выбранных грузов в столбец "Груз и номер груза"
+        for cargo_id in chosen_cargo_ids:
+            add_chosen_cargo(user_id, cargo_id)
 
         chosen_cargo[user_id] = []  # Очищаем список выбранных грузов
         bot.send_message(user_id, "Спасибо за выбор! Мы с вами свяжемся. 🚚")
@@ -202,7 +202,7 @@ def handle_finish(call):
 
 
 
-def add_chosen_cargo(user_id, cargo_row):
+def add_chosen_cargo(user_id, cargo_id):
     sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
 
     # Найдем строку, где user_id совпадает
@@ -213,10 +213,10 @@ def add_chosen_cargo(user_id, cargo_row):
             # Получаем номер последнего столбца выбранных грузов
             last_cargo_column = len(row)
 
-            # Добавляем данные о выбранном грузе в следующий столбец
-            sheet.update_cell(user_row, last_cargo_column + 1, cargo_row)
+            # Добавляем идентификатор груза в следующий столбец
+            print(cargo_id)
+            sheet.update_cell(user_row, last_cargo_column + 1, cargo_id)
             break  # Прерываем цикл, так как нашли нужную строку
-
 
 
 def ask_phone(message):
@@ -381,10 +381,17 @@ def save_cargo_info(message):
 
 
 def add_cargo_to_google_sheets(from_location, to_location, distance, weight, payment):
-    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(1)  # Открываем второй лист
+    sheet = client.open_by_key(SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)  # Открываем лист
 
-    cargo_info = [from_location, to_location, distance, weight, payment]
+    # Получаем текущее количество строк в таблице
+    num_rows = len(sheet.get_all_values()) + 1
+
+    # Генерируем идентификатор в формате "Xcrg", где X - порядковый номер груза
+    cargo_id = f"{num_rows - 1}crg"
+
+    cargo_info = [cargo_id, from_location, to_location, distance, weight, payment]
     sheet.append_row(cargo_info)
+
 
 
 bot.polling()
