@@ -69,7 +69,8 @@ def start(message):
     broker_button = types.InlineKeyboardButton(" 🚚 Перевозчикам", callback_data="driver")
     driver_button = types.InlineKeyboardButton(" 📞 Диспетчерам", callback_data="broker")
     cargo_button = types.InlineKeyboardButton(" 📦 Отправить груз", callback_data="cargo")
-    markup.add(broker_button, driver_button, cargo_button)
+    community_button = types.InlineKeyboardButton(" 👥 Сообщество", url="https://t.me/+j7plDmEkx9wyN2Iy")
+    markup.add(broker_button, driver_button, cargo_button, community_button)
     bot.send_message(message.chat.id, "Приветствую в нашем боте! Пожалуйста выберите раздел:", reply_markup=markup)
 
 
@@ -86,7 +87,6 @@ def handle_broker_role(call):
 
     # Отправляем сообщение с кнопкой
     bot.send_message(user_id, "Для заполнения формы, перейдите по ссылке ниже:", reply_markup=markup)
-
 
 @bot.callback_query_handler(func=lambda call: call.data == "driver")
 def handle_driver_role(call):
