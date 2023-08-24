@@ -34,7 +34,7 @@ def handle_broker_role(call, bot):
                      "чтобы мы узнали о вас побольше!")
     # Создаем кнопку для перенаправления на сайт Google
     markup = types.InlineKeyboardMarkup(row_width=1)
-    google_button = types.InlineKeyboardButton("Перейти к Гугл форме", url="https://www.google.com")
+    google_button = types.InlineKeyboardButton("Перейти к Гугл форме", url="https://forms.gle/rDtNM8sN8JRiaJpp6")
     markup.add(google_button)
 
     # Отправляем сообщение с кнопкой

@@ -1,5 +1,6 @@
 import user_utils
 
+
 def add_chosen_cargo(user_id, cargo_id):
     sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_USER_DATA).get_worksheet(0)
 
@@ -8,13 +9,16 @@ def add_chosen_cargo(user_id, cargo_id):
         if row[0] == str(user_id):
             user_row = idx  # Индекс строки, где нашли совпадение
 
-            # Получаем номер последнего столбца выбранных грузов
-            last_cargo_column = len(row)
+            # Получаем текущее значение ячейки с выбранными грузами
+            current_cargo_ids = row[len(row) - 1]  # Последний столбец
 
-            # Добавляем идентификатор груза в следующий столбец
-            print(cargo_id)
-            sheet.update_cell(user_row, last_cargo_column + 1, cargo_id)
+            # Объединяем текущие идентификаторы и новый идентификатор через запятую
+            updated_cargo_ids = f"{current_cargo_ids},{cargo_id}" if current_cargo_ids else cargo_id
+
+            # Обновляем значение ячейки
+            sheet.update_cell(user_row, len(row), updated_cargo_ids)
             break  # Прерываем цикл, так как нашли нужную строку
+
 
 
 def add_driver_to_google_sheets(user_id, **data):
@@ -38,7 +42,8 @@ def add_driver_to_google_sheets(user_id, **data):
 
     sheet.append_row(driver_info)
 
-def add_cargo_to_google_sheets(from_location, to_location, distance, weight, payment):
+
+def add_cargo_to_google_sheets(from_location, to_location, volume, weight, description, payment, contacts):
     sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)  # Открываем лист
 
     # Получаем текущее количество строк в таблице
@@ -47,5 +52,6 @@ def add_cargo_to_google_sheets(from_location, to_location, distance, weight, pay
     # Генерируем идентификатор в формате "Xcrg", где X - порядковый номер груза
     cargo_id = f"{num_rows - 1}crg"
 
-    cargo_info = [cargo_id, from_location, to_location, distance, weight, payment]
+    cargo_info = [cargo_id, from_location, to_location, volume, weight, description, payment, contacts]
     sheet.append_row(cargo_info)
+
