@@ -65,8 +65,7 @@ def handle_driver_choice(call, bot):
     choice = call.data
 
     if choice == "my_data":
-        user_data_get = user_utils.get_user_data(user_id)
-
+        user_data_get = user_utils.get_displayed_user_data(user_utils.get_user_data(user_id))
         if user_data_get:
             response = "👤 Ваши данные:\n"
             for key, value in user_data_get.items():
@@ -75,27 +74,33 @@ def handle_driver_choice(call, bot):
         else:
             bot.send_message(user_id, "🚫 Ваши данные не найдены.")
     elif choice == "view_cargo":
-        sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_CARGO_DATA).get_worksheet(
-            0)  # Открываем первый лист
+        user_data = user_utils.get_user_data(user_id)
+        if user_data and user_data["role"] == "Водитель":
+            residence_city = user_data["city"]  # Город проживания водителя
+            sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)
 
-        cargo_buttons = []
-        cargo_data = sheet.get_all_values()[1:]  # Пропускаем заголовок
+            cargo_buttons = []
+            cargo_data = sheet.get_all_values()[1:]  # Пропускаем заголовок
 
-        for row in cargo_data:
-            cargo_id = row[0]
-            from_location = row[1]
-            to_location = row[2]
-            cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",
-                                                            callback_data=f"cargo_{cargo_id}"))
+            for row in cargo_data:
+                from_location = row[1]
+                if from_location == residence_city:
+                    cargo_id = row[0]
+                    to_location = row[2]
+                    cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",
+                                                                    callback_data=f"cargo_{cargo_id}"))
 
-        # Добавляем кнопку "Готово" в конце списка грузов
-        finish_button = types.InlineKeyboardButton("Готово✅", callback_data="finish")
-        cargo_buttons.append(finish_button)
+            # Добавляем кнопку "Готово" в конце списка грузов
+            finish_button = types.InlineKeyboardButton("Готово✅", callback_data="finish")
+            cargo_buttons.append(finish_button)
 
-        cargo_buttons_markup = types.InlineKeyboardMarkup(row_width=1)
-        cargo_buttons_markup.add(*cargo_buttons)
+            cargo_buttons_markup = types.InlineKeyboardMarkup(row_width=1)
+            cargo_buttons_markup.add(*cargo_buttons)
 
-        bot.send_message(user_id, "Выберите груз:", reply_markup=cargo_buttons_markup)
+            bot.send_message(user_id, "Выберите груз:", reply_markup=cargo_buttons_markup)
+        else:
+            bot.send_message(user_id, "У вас нет доступа к выбору грузов.")
+
 
 
 def handle_cargo_choice(call, bot):

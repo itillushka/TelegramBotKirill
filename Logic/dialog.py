@@ -145,6 +145,6 @@ def save_cargo_info(message, bot):
         "contacts": message.text
     }
 
-    add_data.add_cargo_to_google_sheets(**cargo_info)
+    add_data.add_cargo_to_google_sheets(**cargo_info, bot=bot)
     bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")
 
