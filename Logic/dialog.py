@@ -89,6 +89,8 @@ def ask_cargo_loading_type(message, bot):
     add_data.add_driver_to_google_sheets(user_id,
                                          **user_dict.driver_data[user_id])  # Добавляем данные о водителе в таблицу
     bot.send_message(user_id, "Спасибо! Ваши данные сохранены.")
+    for i in range(24):
+        bot.delete_message(message.chat.id, message.message_id - i)
 
 
 def ask_cargo_from(message, bot):
@@ -147,4 +149,5 @@ def save_cargo_info(message, bot):
 
     add_data.add_cargo_to_google_sheets(**cargo_info, bot=bot)
     bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")
-
+    for i in range(14):
+        bot.delete_message(message.chat.id, message.message_id - i)
