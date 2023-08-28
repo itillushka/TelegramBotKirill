@@ -108,8 +108,11 @@ def handle_driver_choice(call, bot):
             if broker_id:
                 broker_data = user_utils.get_broker_data(broker_id)
                 if broker_data:
+                    phone_buttons_markup = types.InlineKeyboardMarkup(row_width=1)
+                    phone_button = types.InlineKeyboardButton(f"Позвонить: +{broker_data['phone']}", url=f"http://onmap.uz/tel/{broker_data['phone']}")
+                    phone_buttons_markup.add(phone_button)
                     response = f"Данные диспетчера:\n\nФИО: {broker_data['fullname']}\nТелефон: {broker_data['phone']}\nTelegram: {broker_data['telegram']}"
-                    bot.send_message(user_id, response)
+                    bot.send_message(user_id, response, reply_markup=phone_buttons_markup)
                 else:
                     bot.send_message(user_id, "Диспетчер не найден.")
             else:
