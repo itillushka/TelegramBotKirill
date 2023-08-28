@@ -4,6 +4,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 JSON_PATH = '../credentials.json'
 SPREADSHEET_ID_USER_DATA = '1Ru0mMLA8L6GyTPjvrFXIZ-dGN6u_CaHVsZiHVJo9R6w'
 SPREADSHEET_ID_CARGO_DATA = '1Eph_4O0fJzbAITj98-1aigGct9YPyizM7WZ7dCDC-Pw'
+SPREADSHEET_ID_BROKER_DATA = '11kHyKE8x1xfMzojRvofHKZkUoK7NIHNhetwhWPlhrV8'
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_name(JSON_PATH, scope)
@@ -40,7 +41,8 @@ def get_user_data(user_id):
             "distance": user_data_row[9],
             "legalstatus": user_data_row[10],
             "carownership": user_data_row[11],
-            "loadtype": user_data_row[12]
+            "loadtype": user_data_row[12],
+            "broker_id": user_data_row[13]
         }
         return user_data_disp
     else:
@@ -76,3 +78,20 @@ def get_drivers_in_city(city):
             driver_ids.append(int(row[0]))  # Добавляем идентификатор водителя
 
     return driver_ids
+
+
+def get_broker_data(broker_id):
+    sheet = client.open_by_key(SPREADSHEET_ID_BROKER_DATA).get_worksheet(0)
+    broker_ids = sheet.col_values(1)[1:]
+
+    if broker_id in broker_ids:
+        broker_row = broker_ids.index(broker_id) + 2  # Индекс строки с broker_id, учитывая заголовок в первой строке
+        broker_data_row = sheet.row_values(broker_row)
+        broker_data = {
+            "fullname": broker_data_row[1],
+            "phone": broker_data_row[2],
+            "telegram": broker_data_row[3]
+        }
+        return broker_data
+    else:
+        return None

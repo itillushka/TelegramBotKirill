@@ -102,7 +102,20 @@ def handle_driver_choice(call, bot):
         else:
             bot.send_message(user_id, "У вас нет доступа к выбору грузов.")
     elif choice == "view_broker":
-        bot.send_message(user_id, "Данные диспетчера")
+        user_data = user_utils.get_user_data(user_id)
+        if user_data and user_data["role"] == "Водитель":
+            broker_id = user_data["broker_id"]  # Получаем айди диспетчера из данных водителя
+            if broker_id:
+                broker_data = user_utils.get_broker_data(broker_id)
+                if broker_data:
+                    response = f"Данные диспетчера:\n\nФИО: {broker_data['fullname']}\nТелефон: {broker_data['phone']}\nTelegram: {broker_data['telegram']}"
+                    bot.send_message(user_id, response)
+                else:
+                    bot.send_message(user_id, "Диспетчер не найден.")
+            else:
+                bot.send_message(user_id, "Извините, к вам еще не привязан диспетчер, подождите.")
+        else:
+            bot.send_message(user_id, "У вас нет доступа к данным диспетчера.")
 
 
 def handle_cargo_choice(call, bot):
