@@ -40,7 +40,7 @@ def start_driver(call):
     handlers.start_driver(call, bot)
 
 
-@bot.callback_query_handler(func=lambda call: call.data in ["my_data", "view_cargo"])
+@bot.callback_query_handler(func=lambda call: call.data in ["my_data", "view_cargo", "view_broker"])
 def handle_driver_choice(call):
     handlers.handle_driver_choice(call, bot)
 

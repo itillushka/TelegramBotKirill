@@ -49,7 +49,8 @@ def handle_driver_role(call, bot):
         markup = types.InlineKeyboardMarkup(row_width=1)
         my_data_button = types.InlineKeyboardButton("Мои данные", callback_data="my_data")
         view_cargo_button = types.InlineKeyboardButton("Посмотреть грузы", callback_data="view_cargo")
-        markup.add(my_data_button, view_cargo_button)
+        view_broker_button = types.InlineKeyboardButton("Мой диспетчер", callback_data="view_broker")
+        markup.add(my_data_button, view_cargo_button, view_broker_button)
         bot.send_message(user_id, "Добро пожаловать в меню водителя", reply_markup=markup)
     elif registered and user_role == "Брокер":
         bot.send_message(user_id, "Вы не имеете доступа к роли Перевозчика.")
@@ -100,7 +101,8 @@ def handle_driver_choice(call, bot):
             bot.send_message(user_id, "Выберите груз:", reply_markup=cargo_buttons_markup)
         else:
             bot.send_message(user_id, "У вас нет доступа к выбору грузов.")
-
+    elif choice == "view_broker":
+        bot.send_message(user_id, "Данные диспетчера")
 
 
 def handle_cargo_choice(call, bot):
