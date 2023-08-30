@@ -18,6 +18,7 @@ client = gspread.authorize(creds)
 SPREADSHEET_ID_USER_DATA = '1Ru0mMLA8L6GyTPjvrFXIZ-dGN6u_CaHVsZiHVJo9R6w'
 SPREADSHEET_ID_CARGO_DATA = '1Eph_4O0fJzbAITj98-1aigGct9YPyizM7WZ7dCDC-Pw'
 SPREADSHEET_ID_BROKER_DATA = '11kHyKE8x1xfMzojRvofHKZkUoK7NIHNhetwhWPlhrV8'
+SPREADSHEET_ID_CARGO_HISTORY_DATA = '13ljzO69p1gdKyd7p9QbigiPT_L06R5Qf2GLgBsoGCKI'
 
 
 # Обработчик команды /start
@@ -46,6 +47,11 @@ def handle_driver_choice(call):
     handlers.handle_driver_choice(call, bot)
 
 
+@bot.callback_query_handler(func=lambda call: call.data in ["view_history"])
+def handle_history(call):
+    handlers.handle_history(call, bot)
+
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith("cargo_"))
 def handle_cargo_choice(call):
     handlers.handle_cargo_choice(call, bot)
@@ -61,4 +67,12 @@ def handle_cargo(call):
     handlers.handle_cargo(call, bot)
 
 
-bot.polling()
+@bot.callback_query_handler(func=lambda call: call.data.startswith("history_"))
+def handle_history_details(call):
+    handlers.handle_history_details(call, bot)
+
+
+try:
+    bot.polling()
+except gspread.exceptions.APIError:
+    print("Отсутствие доступа к таблицам")

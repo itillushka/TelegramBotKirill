@@ -5,6 +5,7 @@ JSON_PATH = '../credentials.json'
 SPREADSHEET_ID_USER_DATA = '1Ru0mMLA8L6GyTPjvrFXIZ-dGN6u_CaHVsZiHVJo9R6w'
 SPREADSHEET_ID_CARGO_DATA = '1Eph_4O0fJzbAITj98-1aigGct9YPyizM7WZ7dCDC-Pw'
 SPREADSHEET_ID_BROKER_DATA = '11kHyKE8x1xfMzojRvofHKZkUoK7NIHNhetwhWPlhrV8'
+SPREADSHEET_ID_CARGO_HISTORY_DATA = '13ljzO69p1gdKyd7p9QbigiPT_L06R5Qf2GLgBsoGCKI'
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_name(JSON_PATH, scope)
@@ -95,3 +96,46 @@ def get_broker_data(broker_id):
         return broker_data
     else:
         return None
+
+
+def get_cargo_history(user_id):
+    sheet = client.open_by_key(SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
+    cargo_history_data = sheet.get_all_values()
+
+    cargo_history = {}  # Словарь для хранения истории грузов {cargo_id: status}
+    for row in cargo_history_data[1:]:  # Пропускаем заголовок
+        driver_id = row[0]
+        cargo_id = row[1]
+        status = row[2]
+
+        if driver_id == str(user_id):
+            cargo_history[cargo_id] = status
+
+    return cargo_history
+
+
+def get_cargo_details(cargo_id):
+    sheet = client.open_by_key(SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)
+    cargo_data = sheet.get_all_values()
+
+    for row in cargo_data[1:]:  # Пропускаем заголовок
+        if row[0] == cargo_id:
+            cargo_details = {
+                "from_location": row[1],  # Получите имя города по коду, если нужно
+                "to_location": row[2],  # Получите имя города по коду, если нужно
+                "description": row[5]
+            }
+            return cargo_details
+
+    return None
+
+
+def get_cargo_history_status(cargo_id):
+    sheet = client.open_by_key(SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
+    cargo_history_data = sheet.get_all_values()
+
+    for row in cargo_history_data[1:]:  # Пропускаем заголовок
+        if row[1] == cargo_id:
+            return row[2]
+
+    return None
