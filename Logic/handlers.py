@@ -135,10 +135,22 @@ def handle_cargo_choice(call, bot):
 
     if cargo_id == "finish":
         handle_finish(call, bot)
-    else:
-        # Иначе, добавляем выбранный груз
-        user_dict.chosen_cargo[user_id].append(cargo_id)
-        bot.answer_callback_query(call.id, text="Груз добавлен в выбранные! ✅")
+    elif cargo_id not in user_dict.chosen_cargo[user_id]:
+        # Проверяем, не выбран ли уже этот груз в текущей сессии
+        cargo_already_chosen = cargo_id in user_dict.chosen_cargo[user_id]
+
+        # Проверяем, не выбирал ли пользователь этот груз ранее
+        cargo_already_selected = user_utils.check_if_cargo_already_selected(user_id, cargo_id)
+
+        if not cargo_already_chosen and not cargo_already_selected:
+            user_dict.chosen_cargo[user_id].append(cargo_id)
+            bot.answer_callback_query(call.id, text="Груз добавлен в выбранные! ✅")
+        elif cargo_already_chosen:
+            bot.answer_callback_query(call.id, text="Этот груз уже выбран в текущей сессии! ❌")
+        elif cargo_already_selected:
+            bot.answer_callback_query(call.id, text="Этот груз уже был выбран ранее! ❌")
+
+
 
 
 def handle_finish(call, bot):
@@ -147,13 +159,13 @@ def handle_finish(call, bot):
         chosen_cargo_ids = user_dict.chosen_cargo[user_id]  # Получаем идентификаторы грузов
 
         # Добавление идентификаторов выбранных грузов в столбец "Груз и номер груза"
-        for cargo_id in chosen_cargo_ids:
-            add_data.add_chosen_cargo(user_id, cargo_id)
+        add_data.add_chosen_cargo(user_id, chosen_cargo_ids)
 
         user_dict.chosen_cargo[user_id] = []  # Очищаем список выбранных грузов
         bot.send_message(user_id, "Спасибо за выбор! Мы с вами свяжемся. 🚚")
     else:
         bot.send_message(user_id, "Вы еще не выбрали грузы. 🚫")
+
 
 
 def handle_cargo(call, bot):

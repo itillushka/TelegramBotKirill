@@ -139,3 +139,18 @@ def get_cargo_history_status(cargo_id):
             return row[2]
 
     return None
+
+
+def check_if_cargo_already_selected(user_id, cargo_id):
+    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
+    user_cell = sheet.find(str(user_id))
+    if user_cell:
+        user_row = user_cell.row
+        cargo_cell = sheet.cell(user_row, 15)  # Столбец "Груз и номер груза"
+        existing_cargo = cargo_cell.value
+
+        if existing_cargo:
+            existing_cargo_ids = set(existing_cargo.split(','))
+            return cargo_id in existing_cargo_ids
+
+    return False

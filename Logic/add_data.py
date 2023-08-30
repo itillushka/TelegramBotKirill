@@ -1,24 +1,25 @@
 import user_utils
 from telebot import types
 
-def add_chosen_cargo(user_id, cargo_id):
+
+def add_chosen_cargo(user_id, chosen_cargo_ids):
     sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_USER_DATA).get_worksheet(0)
+    user_cell = sheet.find(str(user_id))
+    if user_cell:
+        user_row = user_cell.row
+        cargo_cell = sheet.cell(user_row, 15)  # Столбец "Груз и номер груза"
+        existing_cargo = cargo_cell.value
 
-    # Найдем строку, где user_id совпадает
-    for idx, row in enumerate(sheet.get_all_values(), start=1):
-        if row[0] == str(user_id):
-            user_row = idx  # Индекс строки, где нашли совпадение
+        if existing_cargo:
+            existing_cargo_ids = set(existing_cargo.split(','))
+            new_cargo_ids = set(chosen_cargo_ids)
+            updated_cargo_ids = existing_cargo_ids.union(new_cargo_ids)
+            updated_cargo = ','.join(updated_cargo_ids)
+        else:
+            updated_cargo = ','.join(chosen_cargo_ids)
 
-            # Получаем текущее значение ячейки с выбранными грузами
-            current_cargo_ids = row[len(row) - 1]  # Последний столбец
-
-            # Объединяем текущие идентификаторы и новый идентификатор через запятую
-            updated_cargo_ids = f"{current_cargo_ids},{cargo_id}" if current_cargo_ids else cargo_id
-
-            # Обновляем значение ячейки
-            sheet.update_cell(user_row, len(row), updated_cargo_ids)
-            break  # Прерываем цикл, так как нашли нужную строку
-
+        cargo_cell.value = updated_cargo
+        sheet.update_cell(user_row, 15, updated_cargo)
 
 
 def add_driver_to_google_sheets(user_id, **data):
