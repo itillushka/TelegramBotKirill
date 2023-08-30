@@ -79,6 +79,8 @@ def handle_driver_choice(call, bot):
         user_data = user_utils.get_user_data(user_id)
         if user_data and user_data["role"] == "Водитель":
             residence_city = user_data["city"]  # Город проживания водителя
+            cargo_type = user_data["loadtype"]  # Тип загрузки водителя
+
             sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)
 
             cargo_buttons = []
@@ -86,7 +88,8 @@ def handle_driver_choice(call, bot):
 
             for row in cargo_data:
                 from_location = row[1]
-                if from_location == residence_city:
+                cargo_row_type = row[5]  # Тип загрузки из таблицы
+                if from_location == residence_city and cargo_row_type == cargo_type:
                     cargo_id = row[0]
                     to_location = row[2]
                     cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",

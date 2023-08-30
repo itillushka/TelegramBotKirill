@@ -110,28 +110,35 @@ def ask_cargo_to(message, bot):
 def ask_cargo_volume(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_volume"] = message.text
-    bot.send_message(user_id, "4. Вес груза (в кг)?")
+    bot.send_message(user_id, "4. Тип загрузки (Верхний/Задний/Боковой)?")
+    bot.register_next_step_handler(message, ask_cargo_loadtype, bot)
+
+
+def ask_cargo_loadtype(message, bot):
+    user_id = message.from_user.id
+    user_dict.user_data[user_id]["cargo_loadtype"] = message.text
+    bot.send_message(user_id, "5. Вес груза в тоннах?")
     bot.register_next_step_handler(message, ask_cargo_weight, bot)
 
 
 def ask_cargo_weight(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_weight"] = message.text
-    bot.send_message(user_id, "5. Описание груза?")
+    bot.send_message(user_id, "6. Описание груза?")
     bot.register_next_step_handler(message, ask_cargo_description, bot)
 
 
 def ask_cargo_description(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_description"] = message.text
-    bot.send_message(user_id, "6. Оплата (в рублях)?")
+    bot.send_message(user_id, "7. Оплата (в рублях)?")
     bot.register_next_step_handler(message, ask_cargo_payment, bot)
 
 
 def ask_cargo_payment(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_payment"] = message.text
-    bot.send_message(user_id, "7. Контакты (телефон и ФИО) через запятую.")
+    bot.send_message(user_id, "8. Контакты (телефон и ФИО) через запятую.")
     bot.register_next_step_handler(message, save_cargo_info, bot)
 
 
@@ -142,6 +149,7 @@ def save_cargo_info(message, bot):
         "to_location": user_dict.user_data[user_id]["cargo_to"],
         "volume": user_dict.user_data[user_id]["cargo_volume"],
         "weight": user_dict.user_data[user_id]["cargo_weight"],
+        "loadtype": user_dict.user_data[user_id]["cargo_loadtype"],
         "description": user_dict.user_data[user_id]["cargo_description"],
         "payment": user_dict.user_data[user_id]["cargo_payment"],
         "contacts": message.text
@@ -149,6 +157,6 @@ def save_cargo_info(message, bot):
 
     add_data.add_cargo_to_google_sheets(**cargo_info, bot=bot)
     bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")
-    for i in range(14):
+    for i in range(16):
         bot.delete_message(message.chat.id, message.message_id - i)
 
