@@ -189,7 +189,7 @@ def handle_history(call, bot):
             markup = types.InlineKeyboardMarkup(row_width=1)
             cargo_buttons = []
 
-            for cargo_id in history_data.items():
+            for cargo_id, status in history_data.items():
                 cargo_button = types.InlineKeyboardButton(
                     f"Заказ {cargo_id} - Подробнее", callback_data=f"history_{cargo_id}"
                 )
@@ -214,7 +214,7 @@ def handle_history_details(call, bot):
         response += f"Город отправки: {cargo_details['from_location']}\n"
         response += f"Город доставки: {cargo_details['to_location']}\n"
         response += f"Статус: {cargo_history_status}\n"
-        response += f"Описание: {cargo_details['description']}\n"
+        response += f"Описание: {cargo_details['comments']}\n"
         bot.send_message(user_id, response)
     else:
         bot.send_message(user_id, f"Информация о заказе {cargo_id} не найдена.")

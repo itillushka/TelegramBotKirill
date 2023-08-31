@@ -121,9 +121,9 @@ def get_cargo_details(cargo_id):
     for row in cargo_data[1:]:  # Пропускаем заголовок
         if row[0] == cargo_id:
             cargo_details = {
-                "from_location": row[1],  # Получите имя города по коду, если нужно
-                "to_location": row[2],  # Получите имя города по коду, если нужно
-                "description": row[5]
+                "from_location": row[1],  
+                "to_location": row[2],
+                "comments": row[10]
             }
             return cargo_details
 

@@ -138,8 +138,24 @@ def ask_cargo_description(message, bot):
 def ask_cargo_payment(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_payment"] = message.text
-    bot.send_message(user_id, "8. Контакты (телефон и ФИО) через запятую.")
+    bot.send_message(user_id, "8. Каков тип оплаты? НДС, без НДС, на карту, наличными")
+    bot.register_next_step_handler(message, ask_payment_type, bot)
+
+
+def ask_payment_type(message, bot):
+    user_id = message.from_user.id
+    user_dict.user_data[user_id]["payment_type"] = message.text
+    bot.send_message(user_id, "9. Контакты (телефон и ФИО) через запятую.?")  # Ваш вопрос о типе оплаты
+    bot.register_next_step_handler(message, ask_cargo_contacts, bot)
+
+
+def ask_cargo_contacts(message, bot):
+    user_id = message.from_user.id
+    user_dict.user_data[user_id]["cargo_contacts"] = message.text
+    bot.send_message(user_id, "Комментарии к заказу?")  # Ваш вопрос о комментариях к заказу
     bot.register_next_step_handler(message, save_cargo_info, bot)
+
+
 
 
 def save_cargo_info(message, bot):
@@ -152,11 +168,13 @@ def save_cargo_info(message, bot):
         "loadtype": user_dict.user_data[user_id]["cargo_loadtype"],
         "description": user_dict.user_data[user_id]["cargo_description"],
         "payment": user_dict.user_data[user_id]["cargo_payment"],
-        "contacts": message.text
+        "paymenttype": user_dict.user_data[user_id]["payment_type"],
+        "contacts": user_dict.user_data[user_id]["cargo_contacts"],
+        "comments": message.text
     }
 
     add_data.add_cargo_to_google_sheets(**cargo_info, bot=bot)
     bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")
-    for i in range(16):
+    for i in range(20):
         bot.delete_message(message.chat.id, message.message_id - i)
 

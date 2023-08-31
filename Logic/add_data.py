@@ -44,7 +44,7 @@ def add_driver_to_google_sheets(user_id, **data):
     sheet.append_row(driver_info)
 
 
-def add_cargo_to_google_sheets(from_location, to_location, volume, weight, loadtype, description, payment, contacts, bot):
+def add_cargo_to_google_sheets(from_location, to_location, volume, weight, loadtype, description, payment, paymenttype, contacts, comments, bot):
     sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)  # Открываем лист
 
     # Получаем текущее количество строк в таблице
@@ -53,7 +53,7 @@ def add_cargo_to_google_sheets(from_location, to_location, volume, weight, loadt
     # Генерируем идентификатор в формате "Xcrg", где X - порядковый номер груза
     cargo_id = f"{num_rows - 1}crg"
 
-    cargo_info = [cargo_id, from_location, to_location, volume, weight, loadtype, description, payment, contacts]
+    cargo_info = [cargo_id, from_location, to_location, volume, weight, loadtype, description, payment, paymenttype, contacts, comments]
     sheet.append_row(cargo_info)
 
     # Оповещаем водителей о новом грузе из их города
@@ -64,7 +64,7 @@ def notify_drivers_about_new_cargo(from_location, loadtype, bot):
     drivers_with_matching_city = user_utils.get_drivers_in_city(from_location)
 
     if drivers_with_matching_city:
-        message = "Привет! Появился свежий груз в твоем городе и типе загрузки!"
+        message = "Привет! Появился свежий груз в твоем городе!"
         for driver_id in drivers_with_matching_city:
             driver_data = user_utils.get_user_data(driver_id)
             if driver_data and driver_data["loadtype"] == loadtype:
