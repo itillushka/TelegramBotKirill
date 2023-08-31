@@ -31,23 +31,25 @@ def get_user_data(user_id):
         user_row = user_cell.row
         user_data_row = sheet.row_values(user_row)
         user_data_disp = {
-            "role": user_data_row[1],
-            "fullname": user_data_row[2],
-            "phone": user_data_row[3],
-            "sign": user_data_row[4],
-            "payload": user_data_row[5],
-            "dimensions": user_data_row[6],
-            "bodytype": user_data_row[7],
-            "city": user_data_row[8],
-            "distance": user_data_row[9],
-            "legalstatus": user_data_row[10],
-            "carownership": user_data_row[11],
-            "loadtype": user_data_row[12],
-            "broker_id": user_data_row[13]
+            "role": user_data_row[1] if len(user_data_row) > 1 and user_data_row[1] else "Отсутствует",
+            "fullname": user_data_row[2] if len(user_data_row) > 2 and user_data_row[2] else "Отсутствует",
+            "phone": user_data_row[3] if len(user_data_row) > 3 and user_data_row[3] else "Отсутствует",
+            "sign": user_data_row[4] if len(user_data_row) > 4 and user_data_row[4] else "Отсутствует",
+            "payload": user_data_row[5] if len(user_data_row) > 5 and user_data_row[5] else "Отсутствует",
+            "dimensions": user_data_row[6] if len(user_data_row) > 6 and user_data_row[6] else "Отсутствует",
+            "bodytype": user_data_row[7] if len(user_data_row) > 7 and user_data_row[7] else "Отсутствует",
+            "city": user_data_row[8] if len(user_data_row) > 8 and user_data_row[8] else "Отсутствует",
+            "distance": user_data_row[9] if len(user_data_row) > 9 and user_data_row[9] else "Отсутствует",
+            "legalstatus": user_data_row[10] if len(user_data_row) > 10 and user_data_row[10] else "Отсутствует",
+            "carownership": user_data_row[11] if len(user_data_row) > 11 and user_data_row[11] else "Отсутствует",
+            "loadtype": user_data_row[12] if len(user_data_row) > 12 and user_data_row[12] else "Отсутствует",
+            "broker_id": user_data_row[13] if len(user_data_row) > 13 and user_data_row[13] else "Отсутствует"
         }
         return user_data_disp
     else:
         return {}
+
+
 
 
 def get_displayed_user_data(raw_user_data):
@@ -64,7 +66,8 @@ def get_displayed_user_data(raw_user_data):
             "Дистанция": raw_user_data["distance"],
             "Юридический статус": raw_user_data["legalstatus"],
             "Владение автомобилем": raw_user_data["carownership"],
-            "Тип загрузки": raw_user_data["loadtype"]
+            "Тип загрузки": raw_user_data["loadtype"],
+            "Идентификатор диспетчера": raw_user_data["broker_id"]
         }
         return user_data_disp
     else:

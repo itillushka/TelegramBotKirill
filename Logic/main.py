@@ -27,14 +27,19 @@ def start(message):
     handlers.start(message, bot)
 
 
-@bot.callback_query_handler(func=lambda call: call.data == "broker")
+@bot.message_handler(func=lambda message: message.text == "📞 Диспетчерам")
 def handle_broker_role(call):
     handlers.handle_broker_role(call, bot)
 
 
-@bot.callback_query_handler(func=lambda call: call.data == "driver")
+@bot.message_handler(func=lambda message: message.text == "🚚 Перевозчикам")
 def handle_driver_role(call):
     handlers.handle_driver_role(call, bot)
+
+
+@bot.message_handler(func=lambda message: message.text == "👥 Сообщество")
+def handle_community_button(message):
+    handlers.handle_community(message, bot)
 
 
 @bot.callback_query_handler(func=lambda call: call.data in ["start_driver"])
@@ -62,9 +67,9 @@ def handle_finish(call):
     handlers.handle_finish(call, bot)
 
 
-@bot.callback_query_handler(func=lambda call: call.data == "cargo")
-def handle_cargo(call):
-    handlers.handle_cargo(call, bot)
+@bot.message_handler(func=lambda message: message.text == "📦 Отправить груз")
+def handle_cargo(message):
+    handlers.handle_cargo(message, bot)
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("history_"))

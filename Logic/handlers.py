@@ -7,13 +7,16 @@ import user_utils
 
 
 def start(message, bot):
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    broker_button = types.InlineKeyboardButton(" 🚚 Перевозчикам", callback_data="driver")
-    driver_button = types.InlineKeyboardButton(" 📞 Диспетчерам", callback_data="broker")
-    cargo_button = types.InlineKeyboardButton(" 📦 Отправить груз", callback_data="cargo")
-    community_button = types.InlineKeyboardButton(" 👥 Сообщество", url="https://t.me/+j7plDmEkx9wyN2Iy")
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    broker_button = types.KeyboardButton("🚚 Перевозчикам")
+    driver_button = types.KeyboardButton("📞 Диспетчерам")
+    cargo_button = types.KeyboardButton("📦 Отправить груз")
+    community_button = types.KeyboardButton("👥 Сообщество")
     markup.add(broker_button, driver_button, cargo_button, community_button)
-    bot.send_message(message.chat.id, "Приветствую в нашем боте! Пожалуйста выберите раздел:", reply_markup=markup)
+
+    with open(user_dict.START_PHOTO, 'rb') as photo:
+        bot.send_photo(message.chat.id, photo, caption="Приветствую в нашем боте! Пожалуйста выберите раздел:", reply_markup=markup)
+
 
 
 def start_driver(call, bot):
@@ -52,14 +55,16 @@ def handle_driver_role(call, bot):
         view_broker_button = types.InlineKeyboardButton("Мой диспетчер", callback_data="view_broker")
         view_history_button = types.InlineKeyboardButton("История заказов", callback_data="view_history")
         markup.add(my_data_button, view_cargo_button, view_broker_button, view_history_button)
-        bot.send_message(user_id, "Добро пожаловать в меню водителя", reply_markup=markup)
+        bot.send_message(user_id, "Добро пожаловать в меню водителя!", reply_markup=markup)
+
     elif registered and user_role == "Брокер":
         bot.send_message(user_id, "Вы не имеете доступа к роли Перевозчика.")
     elif not registered:
         start_button = types.InlineKeyboardButton("🟢 Начать", callback_data="start_driver")
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(start_button)
-        bot.send_message(user_id, "Добро пожаловать в панель новых водителей!", reply_markup=markup)
+        with open(user_dict.REGISTRATION_PHOTO, 'rb') as photo:
+            bot.send_photo(user_id, photo, caption="Пожалуйста, ответьте на несколько вопросов:", reply_markup=markup)
 
 
 def handle_driver_choice(call, bot):
@@ -72,7 +77,8 @@ def handle_driver_choice(call, bot):
             response = "👤 Ваши данные:\n"
             for key, value in user_data_get.items():
                 response += f"✅ {key.capitalize()}: {value}\n"
-            bot.send_message(user_id, response)
+            with open(user_dict.USER_DATA_PHOTO, 'rb') as photo:
+                bot.send_photo(user_id, photo, caption=response)
         else:
             bot.send_message(user_id, "🚫 Ваши данные не найдены.")
     elif choice == "view_cargo":
@@ -102,7 +108,8 @@ def handle_driver_choice(call, bot):
             cargo_buttons_markup = types.InlineKeyboardMarkup(row_width=1)
             cargo_buttons_markup.add(*cargo_buttons)
 
-            bot.send_message(user_id, "Выберите груз:", reply_markup=cargo_buttons_markup)
+            with open(user_dict.CARGO_LIST_PHOTO, 'rb') as photo:
+                bot.send_photo(user_id, photo, caption="Выберите груз:", reply_markup=cargo_buttons_markup)
         else:
             bot.send_message(user_id, "У вас нет доступа к выбору грузов.")
     elif choice == "view_broker":
@@ -120,7 +127,8 @@ def handle_driver_choice(call, bot):
                                f"\n\nФИО: {broker_data['fullname']}\n" \
                                f"Телефон: {broker_data['phone']}\n" \
                                f"Telegram: {broker_data['telegram']}"
-                    bot.send_message(user_id, response, reply_markup=phone_buttons_markup)
+                    with open(user_dict.BROKER_PHOTO, 'rb') as photo:
+                        bot.send_photo(user_id, photo, caption=response, reply_markup=phone_buttons_markup)
                 else:
                     bot.send_message(user_id, "Диспетчер не найден.")
             else:
@@ -171,9 +179,9 @@ def handle_finish(call, bot):
 def handle_cargo(call, bot):
     user_id = call.from_user.id
     user_dict.user_data[user_id] = {}
-    bot.send_message(user_id, "Введите данные о грузе.\n\n1. Откуда?")
-
-    bot.register_next_step_handler(call.message, dialog.ask_cargo_from, bot)
+    with open(user_dict.CARGO_PHOTO, 'rb') as photo:
+        bot.send_photo(user_id, photo, caption="Введите данные о грузе.\n\n1. Откуда?")
+    bot.register_next_step_handler(call, dialog.ask_cargo_from, bot)
 
 
 def handle_history(call, bot):
@@ -199,7 +207,8 @@ def handle_history(call, bot):
             cargo_buttons.append(types.InlineKeyboardButton("История заказов пуста.", callback_data="dummy"))
 
         markup.add(recent_button, unpaid_button, *cargo_buttons)
-        bot.send_message(user_id, "📚 История заказов:", reply_markup=markup)
+        with open(user_dict.CARGO_HISTORY_PHOTO, 'rb') as photo:
+            bot.send_photo(user_id, photo, caption="📚 История заказов:", reply_markup=markup)
     else:
         bot.send_message(user_id, "У вас нет доступа к истории заказов.")
 
@@ -251,3 +260,8 @@ def handle_unpaid_cargos(call, bot):
             response += f"Комментарии: {cargo_details['comments']}\n"
             response += f"Статус: {cargo_status}\n\n"
     bot.send_message(user_id, response)
+
+
+def handle_community(message, bot):
+    community_link = "https://t.me/+j7plDmEkx9wyN2Iy"  # Ссылка на сообщество
+    bot.send_message(message.chat.id, f"Добро пожаловать в наше сообщество!\n{community_link}")

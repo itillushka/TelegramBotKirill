@@ -1,4 +1,5 @@
 import user_utils
+import user_dict
 from telebot import types
 
 
@@ -73,5 +74,6 @@ def notify_drivers_about_new_cargo(from_location, loadtype, bot):
                 cargo_buttons_markup = types.InlineKeyboardMarkup(row_width=1)
                 cargo_buttons_markup.add(cargo_button)
 
-                bot.send_message(driver_id, message, reply_markup=cargo_buttons_markup)
+                with open(user_dict.NEW_CARGO_PHOTO, 'rb') as photo:
+                    bot.send_photo(driver_id, photo, caption=message, reply_markup=cargo_buttons_markup)
 
