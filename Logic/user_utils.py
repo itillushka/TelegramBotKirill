@@ -120,10 +120,19 @@ def get_cargo_details(cargo_id):
 
     for row in cargo_data[1:]:  # Пропускаем заголовок
         if row[0] == cargo_id:
+            cargo_history_sheet = client.open_by_key(SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
+            cargo_history_data = cargo_history_sheet.get_all_values()
+
+            comments = None
+            for history_row in cargo_history_data[1:]:
+                if history_row[1] == cargo_id:
+                    comments = history_row[7]  # Измените на нужный индекс столбца с комментариями
+                    break
+
             cargo_details = {
-                "from_location": row[1],  
+                "from_location": row[1],
                 "to_location": row[2],
-                "comments": row[10]
+                "comments": comments
             }
             return cargo_details
 
@@ -154,3 +163,37 @@ def check_if_cargo_already_selected(user_id, cargo_id):
             return cargo_id in existing_cargo_ids
 
     return False
+
+
+def get_recent_cargos(user_id, count):
+    sheet = client.open_by_key(SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
+    cargo_history_data = sheet.get_all_values()
+
+    recent_cargos = {}  # Словарь для хранения последних грузов {cargo_id: status}
+    user_cargos = [row for row in cargo_history_data[1:] if row[0] == str(user_id)]
+
+    if user_cargos:
+        sorted_cargos = sorted(user_cargos, key=lambda x: x[1], reverse=True)
+        for row in sorted_cargos[:count]:
+            cargo_id = row[1]
+            status = row[2]
+            recent_cargos[cargo_id] = status
+
+    return recent_cargos
+
+
+def get_unpaid_cargos(user_id):
+    sheet = client.open_by_key(SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
+    cargo_history_data = sheet.get_all_values()
+
+    unpaid_cargos = {}  # Словарь для хранения неоплаченных грузов {cargo_id: status}
+    user_cargos = [row for row in cargo_history_data[1:] if row[0] == str(user_id)]
+
+    if user_cargos:
+        for row in user_cargos:
+            cargo_id = row[1]
+            status = row[2]
+            if status == "Неоплачен":
+                unpaid_cargos[cargo_id] = status
+
+    return unpaid_cargos

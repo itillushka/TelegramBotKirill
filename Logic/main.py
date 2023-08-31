@@ -72,6 +72,16 @@ def handle_history_details(call):
     handlers.handle_history_details(call, bot)
 
 
+@bot.callback_query_handler(func=lambda call: call.data.startswith("recent_history"))
+def handle_recent_cargos(call):
+    handlers.handle_recent_cargos(call, bot)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("unpaid_history"))
+def handle_unpaid_cargos(call):
+    handlers.handle_unpaid_cargos(call, bot)
+
+
 try:
     bot.polling()
 except gspread.exceptions.APIError:

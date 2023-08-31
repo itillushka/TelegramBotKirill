@@ -154,8 +154,6 @@ def handle_cargo_choice(call, bot):
             bot.answer_callback_query(call.id, text="Этот груз уже был выбран ранее! ❌")
 
 
-
-
 def handle_finish(call, bot):
     user_id = call.from_user.id
     if user_id in user_dict.chosen_cargo and user_dict.chosen_cargo[user_id]:
@@ -168,7 +166,6 @@ def handle_finish(call, bot):
         bot.send_message(user_id, "Спасибо за выбор! Мы с вами свяжемся. 🚚")
     else:
         bot.send_message(user_id, "Вы еще не выбрали грузы. 🚫")
-
 
 
 def handle_cargo(call, bot):
@@ -184,21 +181,25 @@ def handle_history(call, bot):
     user_data = user_utils.get_user_data(user_id)
 
     if user_data and user_data["role"] == "Водитель":
+        markup = types.InlineKeyboardMarkup(row_width=1)
+
+        recent_button = types.InlineKeyboardButton("📆 Недавние", callback_data="recent_history")
+        unpaid_button = types.InlineKeyboardButton("💲 Неоплаченные", callback_data="unpaid_history")
+
+        cargo_buttons = []
+
         history_data = user_utils.get_cargo_history(user_id)
         if history_data:
-            markup = types.InlineKeyboardMarkup(row_width=1)
-            cargo_buttons = []
-
             for cargo_id, status in history_data.items():
                 cargo_button = types.InlineKeyboardButton(
                     f"Заказ {cargo_id} - Подробнее", callback_data=f"history_{cargo_id}"
                 )
                 cargo_buttons.append(cargo_button)
-
-            markup.add(*cargo_buttons)
-            bot.send_message(user_id, "📚 История заказов:", reply_markup=markup)
         else:
-            bot.send_message(user_id, "История заказов пуста.")
+            cargo_buttons.append(types.InlineKeyboardButton("История заказов пуста.", callback_data="dummy"))
+
+        markup.add(recent_button, unpaid_button, *cargo_buttons)
+        bot.send_message(user_id, "📚 История заказов:", reply_markup=markup)
     else:
         bot.send_message(user_id, "У вас нет доступа к истории заказов.")
 
@@ -218,3 +219,35 @@ def handle_history_details(call, bot):
         bot.send_message(user_id, response)
     else:
         bot.send_message(user_id, f"Информация о заказе {cargo_id} не найдена.")
+
+
+def handle_recent_cargos(call, bot):
+    user_id = call.from_user.id
+    # Retrieve the last 7 cargos for the driver (modify as needed)
+    recent_cargos = user_utils.get_recent_cargos(user_id, 7)
+    response = "📆 Последние 7 грузов:\n"
+    for cargo_id, cargo_status in recent_cargos.items():
+        cargo_details = user_utils.get_cargo_details(cargo_id)
+        if cargo_details:
+            response += f"📦 Груз {cargo_id}:\n"
+            response += f"Откуда: {cargo_details['from_location']}\n"
+            response += f"Куда: {cargo_details['to_location']}\n"
+            response += f"Комментарии: {cargo_details['comments']}\n"
+            response += f"Статус: {cargo_status}\n\n"
+    bot.send_message(user_id, response)
+
+
+def handle_unpaid_cargos(call, bot):
+    user_id = call.from_user.id
+    # Retrieve all unpaid cargos for the driver
+    unpaid_cargos = user_utils.get_unpaid_cargos(user_id)
+    response = "💲 Неоплаченные грузы:\n"
+    for cargo_id, cargo_status in unpaid_cargos.items():
+        cargo_details = user_utils.get_cargo_details(cargo_id)
+        if cargo_details:
+            response += f"📦 Груз {cargo_id}:\n"
+            response += f"Откуда: {cargo_details['from_location']}\n"
+            response += f"Куда: {cargo_details['to_location']}\n"
+            response += f"Комментарии: {cargo_details['comments']}\n"
+            response += f"Статус: {cargo_status}\n\n"
+    bot.send_message(user_id, response)
