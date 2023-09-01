@@ -3,7 +3,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 JSON_PATH = '../credentials.json'
 SPREADSHEET_ID_USER_DATA = '1Ru0mMLA8L6GyTPjvrFXIZ-dGN6u_CaHVsZiHVJo9R6w'
-SPREADSHEET_ID_CARGO_DATA = '1Eph_4O0fJzbAITj98-1aigGct9YPyizM7WZ7dCDC-Pw'
+SPREADSHEET_ID_CARGO_DATA = '11bCdYF4Mt7ZJ9U9gkpKOUnMaBDIqYk3J2DoqQ4v6KFA'
+SPREADSHEET_ID_APPROVED_CARGO_DATA = '1Eph_4O0fJzbAITj98-1aigGct9YPyizM7WZ7dCDC-Pw'
 SPREADSHEET_ID_BROKER_DATA = '11kHyKE8x1xfMzojRvofHKZkUoK7NIHNhetwhWPlhrV8'
 SPREADSHEET_ID_CARGO_HISTORY_DATA = '13ljzO69p1gdKyd7p9QbigiPT_L06R5Qf2GLgBsoGCKI'
 
@@ -48,8 +49,6 @@ def get_user_data(user_id):
         return user_data_disp
     else:
         return {}
-
-
 
 
 def get_displayed_user_data(raw_user_data):

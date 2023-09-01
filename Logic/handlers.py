@@ -15,8 +15,8 @@ def start(message, bot):
     markup.add(broker_button, driver_button, cargo_button, community_button)
 
     with open(user_dict.START_PHOTO, 'rb') as photo:
-        bot.send_photo(message.chat.id, photo, caption="Приветствую в нашем боте! Пожалуйста выберите раздел:", reply_markup=markup)
-
+        bot.send_photo(message.chat.id, photo, caption="Приветствую в нашем боте! Пожалуйста выберите раздел:",
+                       reply_markup=markup)
 
 
 def start_driver(call, bot):
@@ -49,13 +49,6 @@ def handle_driver_role(call, bot):
     registered, user_role = user_utils.is_user_registered(user_id)
 
     if registered and user_role == "Водитель":
-        # Удаляем предыдущее меню водителя (если оно было)
-        if user_id in user_dict.driver_menus:
-            prev_menu_message_id = user_dict.driver_menus[user_id]
-            try:
-                bot.delete_message(user_id, prev_menu_message_id)
-            except Exception as e:
-                print("Ошибка при удалении предыдущего меню:", e)
 
         markup = types.InlineKeyboardMarkup(row_width=1)
         my_data_button = types.InlineKeyboardButton("Мои данные", callback_data="my_data")
@@ -64,10 +57,7 @@ def handle_driver_role(call, bot):
         view_history_button = types.InlineKeyboardButton("История заказов", callback_data="view_history")
         markup.add(my_data_button, view_cargo_button, view_broker_button, view_history_button)
 
-
-        # Сохраняем идентификатор нового меню
-        new_menu_message = bot.send_message(user_id, "Добро пожаловать в меню водителя!", reply_markup=markup)
-        user_dict.driver_menus[user_id] = new_menu_message.message_id
+        bot.send_message(user_id, "Добро пожаловать в меню водителя!", reply_markup=markup)
 
     elif registered and user_role == "Брокер":
         bot.send_message(user_id, "Вы не имеете доступа к роли Перевозчика.")
@@ -95,9 +85,6 @@ def handle_driver_choice(call, bot):
             bot.send_message(user_id, "🚫 Ваши данные не найдены.")
     elif choice == "view_cargo":
         user_data = user_utils.get_user_data(user_id)
-        if user_id in user_dict.cargo_menu_messages:
-            last_cargo_message_id = user_dict.cargo_menu_messages[user_id]
-            bot.delete_message(chat_id=user_id, message_id=last_cargo_message_id)
         if user_data and user_data["role"] == "Водитель":
             residence_city = user_data["city"]  # Город проживания водителя
             cargo_type = user_data["loadtype"]  # Тип загрузки водителя
@@ -124,16 +111,12 @@ def handle_driver_choice(call, bot):
             cargo_buttons_markup.add(*cargo_buttons)
 
             with open(user_dict.CARGO_LIST_PHOTO, 'rb') as photo:
-                message = bot.send_photo(user_id, photo, caption="Выберите груз:", reply_markup=cargo_buttons_markup)
+                bot.send_photo(user_id, photo, caption="Выберите груз:", reply_markup=cargo_buttons_markup)
 
-            user_dict.cargo_menu_messages[user_id] = message.message_id
         else:
             bot.send_message(user_id, "У вас нет доступа к выбору грузов.")
     elif choice == "view_broker":
         user_data = user_utils.get_user_data(user_id)
-        if user_id in user_dict.broker_menu_messages:
-            last_broker_message_id = user_dict.broker_menu_messages[user_id]
-            bot.delete_message(chat_id=user_id, message_id=last_broker_message_id)
         if user_data and user_data["role"] == "Водитель":
             broker_id = user_data["broker_id"]  # Получаем айди диспетчера из данных водителя
             if broker_id:
@@ -148,17 +131,14 @@ def handle_driver_choice(call, bot):
                                f"Телефон: {broker_data['phone']}\n" \
                                f"Telegram: {broker_data['telegram']}"
                     with open(user_dict.BROKER_PHOTO, 'rb') as photo:
-                        message = bot.send_photo(user_id, photo, caption=response, reply_markup=phone_buttons_markup)
+                        bot.send_photo(user_id, photo, caption=response, reply_markup=phone_buttons_markup)
 
-                    user_dict.broker_menu_messages[user_id] = message.message_id
                 else:
                     bot.send_message(user_id, "Диспетчер не найден.")
             else:
                 bot.send_message(user_id, "Извините, к вам еще не привязан диспетчер, подождите.")
         else:
             bot.send_message(user_id, "У вас нет доступа к данным диспетчера.")
-
-
 
 
 def handle_cargo_choice(call, bot):
@@ -212,9 +192,6 @@ def handle_history(call, bot):
     user_id = call.from_user.id
     user_data = user_utils.get_user_data(user_id)
 
-    if user_id in user_dict.history_menu_messages:
-        last_history_message_id = user_dict.history_menu_messages[user_id]
-        bot.delete_message(chat_id=user_id, message_id=last_history_message_id)
     if user_data and user_data["role"] == "Водитель":
         markup = types.InlineKeyboardMarkup(row_width=1)
 
@@ -235,9 +212,8 @@ def handle_history(call, bot):
 
         markup.add(recent_button, unpaid_button, *cargo_buttons)
         with open(user_dict.CARGO_HISTORY_PHOTO, 'rb') as photo:
-            message = bot.send_photo(user_id, photo, caption="📚 История заказов:", reply_markup=markup)
+            bot.send_photo(user_id, photo, caption="📚 История заказов:", reply_markup=markup)
 
-            user_dict.history_menu_messages[user_id] = message.message_id
     else:
         bot.send_message(user_id, "У вас нет доступа к истории заказов.")
 
@@ -294,3 +270,7 @@ def handle_unpaid_cargos(call, bot):
 def handle_community(message, bot):
     community_link = "https://t.me/+j7plDmEkx9wyN2Iy"  # Ссылка на сообщество
     bot.send_message(message.chat.id, f"Добро пожаловать в наше сообщество!\n{community_link}")
+
+
+def broker(message, bot):
+    bot.send_message(message.chat.id, "Админ панель")

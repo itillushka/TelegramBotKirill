@@ -58,17 +58,17 @@ def add_cargo_to_google_sheets(from_location, to_location, volume, weight, loadt
     sheet.append_row(cargo_info)
 
     # Оповещаем водителей о новом грузе из их города
-    notify_drivers_about_new_cargo(from_location, loadtype, bot)
+    notify_drivers_about_new_cargo(from_location, loadtype,weight, bot)
 
 
-def notify_drivers_about_new_cargo(from_location, loadtype, bot):
+def notify_drivers_about_new_cargo(from_location, loadtype,weight, bot):
     drivers_with_matching_city = user_utils.get_drivers_in_city(from_location)
 
     if drivers_with_matching_city:
         message = "Привет! Появился свежий груз в твоем городе!"
         for driver_id in drivers_with_matching_city:
             driver_data = user_utils.get_user_data(driver_id)
-            if driver_data and driver_data["loadtype"] == loadtype:
+            if driver_data and driver_data["loadtype"] == loadtype and driver_data["payload"] <= weight:
                 # Добавляем кнопку "Грузы" под уведомлением
                 cargo_button = types.InlineKeyboardButton("Просмотреть грузы", callback_data="view_cargo")
                 cargo_buttons_markup = types.InlineKeyboardMarkup(row_width=1)
@@ -76,4 +76,3 @@ def notify_drivers_about_new_cargo(from_location, loadtype, bot):
 
                 with open(user_dict.NEW_CARGO_PHOTO, 'rb') as photo:
                     bot.send_photo(driver_id, photo, caption=message, reply_markup=cargo_buttons_markup)
-

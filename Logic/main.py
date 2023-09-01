@@ -14,17 +14,16 @@ scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/au
 creds = ServiceAccountCredentials.from_json_keyfile_name(JSON_PATH, scope)
 client = gspread.authorize(creds)
 
-# ID Google Таблицы (взять из URL)
-SPREADSHEET_ID_USER_DATA = '1Ru0mMLA8L6GyTPjvrFXIZ-dGN6u_CaHVsZiHVJo9R6w'
-SPREADSHEET_ID_CARGO_DATA = '1Eph_4O0fJzbAITj98-1aigGct9YPyizM7WZ7dCDC-Pw'
-SPREADSHEET_ID_BROKER_DATA = '11kHyKE8x1xfMzojRvofHKZkUoK7NIHNhetwhWPlhrV8'
-SPREADSHEET_ID_CARGO_HISTORY_DATA = '13ljzO69p1gdKyd7p9QbigiPT_L06R5Qf2GLgBsoGCKI'
-
 
 # Обработчик команды /start
 @bot.message_handler(commands=['start', 'menu'])
 def start(message):
     handlers.start(message, bot)
+
+
+@bot.message_handler(func=lambda message: message.text == "/broker 1111")
+def broker(message):
+    handlers.broker(message, bot)
 
 
 @bot.message_handler(func=lambda message: message.text == "📞 Диспетчерам")

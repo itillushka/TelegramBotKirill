@@ -156,8 +156,6 @@ def ask_cargo_contacts(message, bot):
     bot.register_next_step_handler(message, save_cargo_info, bot)
 
 
-
-
 def save_cargo_info(message, bot):
     user_id = message.from_user.id
     cargo_info = {
@@ -177,4 +175,3 @@ def save_cargo_info(message, bot):
     bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")
     for i in range(20):
         bot.delete_message(message.chat.id, message.message_id - i)
-
