@@ -73,14 +73,20 @@ def get_displayed_user_data(raw_user_data):
         return {}
 
 
-def get_drivers_in_city(city):
+def get_drivers_in_city_with_loadtype_and_weight(city, loadtype, cargo_weight):
     sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
     driver_ids = []
     for idx, row in enumerate(sheet.get_all_values(), start=1):  # Пропускаем заголовок
-        if row[8] == city and row[1] == "Водитель":  # Проверяем город проживания и роль
+        if (
+            row[8] == city  # Проверяем город проживания
+            and row[1] == "Водитель"  # Проверяем роль
+            and int(row[5]) >= int(cargo_weight)  # Проверяем, что вес груза меньше или равен грузоподъемности автомобиля
+            and row[12] == loadtype  # Проверяем тип загрузки
+        ):
             driver_ids.append(int(row[0]))  # Добавляем идентификатор водителя
 
     return driver_ids
+
 
 
 def get_broker_data(broker_id):

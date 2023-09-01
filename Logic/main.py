@@ -21,7 +21,7 @@ def start(message):
     handlers.start(message, bot)
 
 
-@bot.message_handler(func=lambda message: message.text == "/broker 1111")
+@bot.message_handler(commands=['broker1111'])
 def broker(message):
     handlers.broker(message, bot)
 
@@ -84,6 +84,11 @@ def handle_recent_cargos(call):
 @bot.callback_query_handler(func=lambda call: call.data.startswith("unpaid_history"))
 def handle_unpaid_cargos(call):
     handlers.handle_unpaid_cargos(call, bot)
+
+
+@bot.callback_query_handler(func=lambda call: call.data == "update_notifications")
+def update_notifications(call):
+    handlers.handle_update_notifications(call, bot)
 
 
 try:

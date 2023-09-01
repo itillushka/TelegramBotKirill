@@ -273,4 +273,13 @@ def handle_community(message, bot):
 
 
 def broker(message, bot):
-    bot.send_message(message.chat.id, "Админ панель")
+    markup = types.InlineKeyboardMarkup()
+    update_button = types.InlineKeyboardButton("Обновить рассылку", callback_data="update_notifications")
+    markup.add(update_button)
+    bot.send_message(message.chat.id, "Админ панель", reply_markup=markup)
+
+
+def handle_update_notifications(call, bot):
+    add_data.update_cargo_notifications(call, bot)
+    bot.send_message(call.from_user.id, "Рассылка обновлена!")
+
