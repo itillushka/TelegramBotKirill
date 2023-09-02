@@ -103,7 +103,15 @@ def ask_cargo_from(message, bot):
 def ask_cargo_to(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_to"] = message.text
-    bot.send_message(user_id, "3. Объем груза в метрах кубических, если не знает то введите размерность по примеру '2.1/4.2/2.0'")
+    bot.send_message(user_id, "2. Какая дистанция до места доставки (в километрах)?")
+    bot.register_next_step_handler(message, ask_cargo_distance, bot)
+
+
+def ask_cargo_distance(message, bot):
+    user_id = message.from_user.id
+    user_dict.user_data[user_id]["cargo_distance"] = message.text
+    bot.send_message(user_id,
+                     "3. Объем груза в метрах кубических, если не знаете, то введите размерность по примеру '2.1/4.2/2.0'")
     bot.register_next_step_handler(message, ask_cargo_volume, bot)
 
 
@@ -181,6 +189,7 @@ def save_cargo_info(message, bot):
     cargo_info = {
         "from_location": user_dict.user_data[user_id]["cargo_from"],
         "to_location": user_dict.user_data[user_id]["cargo_to"],
+        "distance": user_dict.user_data[user_id]["cargo_distance"],
         "volume": user_dict.user_data[user_id]["cargo_volume"],
         "weight": user_dict.user_data[user_id]["cargo_weight"],
         "loadtype": user_dict.user_data[user_id]["cargo_loadtype"],
@@ -193,5 +202,5 @@ def save_cargo_info(message, bot):
 
     add_data.add_cargo_to_google_sheets(**cargo_info, bot=bot)
     bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")
-    for i in range(20):
+    for i in range(23):
         bot.delete_message(message.chat.id, message.message_id - i)

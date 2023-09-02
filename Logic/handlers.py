@@ -68,7 +68,9 @@ def handle_driver_role(call, bot):
         with open(user_dict.REGISTRATION_PHOTO, 'rb') as photo:
             bot.send_photo(user_id, photo, caption="Пожалуйста, ответьте на несколько вопросов:", reply_markup=markup)
 
-
+def is_single_number(volume_str):
+    # Проверяем, содержит ли строка символ "/"
+    return '/' not in volume_str
 def handle_driver_choice(call, bot):
     user_id = call.from_user.id
     choice = call.data
@@ -84,8 +86,9 @@ def handle_driver_choice(call, bot):
             for key, value in user_data_get.items():
                 response += f"✅ {key.capitalize()}: {value}\n"
 
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=response, reply_markup=markup)
-            #with open(user_dict.USER_DATA_PHOTO, 'rb') as photo:
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=response,
+                                  reply_markup=markup)
+            # with open(user_dict.USER_DATA_PHOTO, 'rb') as photo:
             #    bot.send_photo(user_id, photo, caption=response, reply_markup=markup)
         else:
             bot.send_message(user_id, "🚫 Ваши данные не найдены.")
@@ -96,6 +99,7 @@ def handle_driver_choice(call, bot):
             cargo_type = user_data["loadtype"]  # Тип загрузки водителя
             car_payload = float(user_data["payload"])
             car_volume = user_data["dimensions"]
+            car_distance = float(user_data["distance"])
 
             # Разбиваем текстовое значение размерности кузова на отдельные числа
             car_dimensions = car_volume.split('/')
@@ -108,27 +112,45 @@ def handle_driver_choice(call, bot):
 
             for row in cargo_data:
                 from_location = row[1]
-                cargo_row_type = row[5]  # Тип загрузки из таблицы
-                cargo_volume = row[3]  # Объем груза из таблицы
-                cargo_weight = float(row[4])  # Вес груза из таблицы
+                cargo_row_type = row[6]  # Тип загрузки из таблицы
+                cargo_volume = row[4]  # Объем груза из таблицы
+                cargo_weight = float(row[5])  # Вес груза из таблицы
+                cargo_distance = float(row[3])
 
                 # Разбиваем текстовое значение размерности груза на отдельные числа
                 cargo_dimensions = cargo_volume.split('/')
                 cargo_dimensions = [float(dim) for dim in cargo_dimensions]
 
-                # Проверяем, подходит ли груз по объему и весу
-                if (
-                        from_location == residence_city
-                        and cargo_row_type == cargo_type
-                        and cargo_weight <= car_payload  # Проверка по грузоподъемности
-                        and all(cargo_dim <= car_dim for cargo_dim, car_dim in zip(cargo_dimensions, car_dimensions))
-                        and (cargo_dimensions[0] * cargo_dimensions[1] * cargo_dimensions[2]) <= (
-                        car_dimensions[0] * car_dimensions[1] * car_dimensions[2])  # Проверка по общему объему
-                ):
-                    cargo_id = row[0]
-                    to_location = row[2]
-                    cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",
-                                                                    callback_data=f"cargo_{cargo_id}"))
+                if is_single_number(cargo_volume):
+                    # Если объем груза представлен одним числом, сравниваем его с общим объемом кузова
+                    cargo_volume_float = float(cargo_volume)
+                    car_volume_float = car_dimensions[0] * car_dimensions[1] * car_dimensions[2]
+                    if (
+                            from_location == residence_city
+                            and cargo_row_type == cargo_type
+                            and cargo_weight <= car_payload
+                            and cargo_volume_float <= car_volume_float
+                            and car_distance >= cargo_distance
+                    ):
+                        cargo_id = row[0]
+                        to_location = row[2]
+                        cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",
+                                                                        callback_data=f"cargo_{cargo_id}"))
+                else:
+                    # В противном случае, сравниваем размерности груза и кузова как ранее
+                    if (
+                            from_location == residence_city
+                            and cargo_row_type == cargo_type
+                            and cargo_weight <= car_payload
+                            and all(cargo_dim <= car_dim for cargo_dim, car_dim in zip(cargo_dimensions, car_dimensions))
+                            and (cargo_dimensions[0] * cargo_dimensions[1] * cargo_dimensions[2]) <= (
+                            car_dimensions[0] * car_dimensions[1] * car_dimensions[2])
+                            and car_distance >= cargo_distance
+                    ):
+                        cargo_id = row[0]
+                        to_location = row[2]
+                        cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",
+                                                                        callback_data=f"cargo_{cargo_id}"))
 
             # Добавляем кнопку "Готово" в конце списка грузов
             finish_button = types.InlineKeyboardButton("Готово✅", callback_data="finish")
@@ -223,7 +245,6 @@ def handle_history(call, bot):
 
         recent_button = types.InlineKeyboardButton("📆 Недавние", callback_data="recent_history")
         unpaid_button = types.InlineKeyboardButton("💲 Неоплаченные", callback_data="unpaid_history")
-
 
         cargo_buttons = []
 

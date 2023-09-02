@@ -45,7 +45,7 @@ def add_driver_to_google_sheets(user_id, **data):
     sheet.append_row(driver_info)
 
 
-def add_cargo_to_google_sheets(from_location, to_location, volume, weight, loadtype, description, payment, paymenttype,
+def add_cargo_to_google_sheets(from_location, to_location, distance, volume, weight, loadtype, description, payment, paymenttype,
                                contacts, comments, bot):
     sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)  # Открываем лист
 
@@ -55,7 +55,7 @@ def add_cargo_to_google_sheets(from_location, to_location, volume, weight, loadt
     # Генерируем идентификатор в формате "Xcrg", где X - порядковый номер груза
     cargo_id = f"{num_rows - 1}crg"
 
-    cargo_info = [cargo_id, from_location, to_location, volume, weight, loadtype, description, payment, paymenttype,
+    cargo_info = [cargo_id, from_location, to_location, distance, volume, weight, loadtype, description, payment, paymenttype,
                   contacts, comments]
     sheet.append_row(cargo_info)
 
@@ -67,20 +67,20 @@ def update_cargo_notifications(call, bot):
 
     for row in cargo_data[1:]:  # Пропускаем заголовок
         cargo_id = row[0]
-        approved = row[11]
+        approved = row[12]
 
         if not approved:
             from_location = row[1]
-            loadtype = row[5]
-            weight = row[4]
-            volume = row[3]
+            loadtype = row[6]
+            weight = row[5]
+            volume = row[4]
 
             # Проверяем, есть ли идентификатор груза в ячейке столбца номер 11
-            if cargo_id not in row[11:]:
+            if cargo_id not in row[12:]:
                 notify_drivers_about_new_cargo(from_location, loadtype, weight, volume, bot)
                 # Добавляем "да" в 11-ю ячейку после отправки уведомления
                 cargo_row_index = cargo_data.index(row) + 1
-                sheet.update_cell(cargo_row_index, 12, "да")
+                sheet.update_cell(cargo_row_index, 13, "да")
                 # Сообщаем о том, какой груз был обновлен
                 bot.send_message(user_id, f"Груз с идентификатором {cargo_id} обновил рассылку.")
 
