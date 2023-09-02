@@ -73,10 +73,11 @@ def update_cargo_notifications(call, bot):
             from_location = row[1]
             loadtype = row[5]
             weight = row[4]
+            volume = row[3]
 
             # Проверяем, есть ли идентификатор груза в ячейке столбца номер 11
             if cargo_id not in row[11:]:
-                notify_drivers_about_new_cargo(from_location, loadtype, weight, bot)
+                notify_drivers_about_new_cargo(from_location, loadtype, weight, volume, bot)
                 # Добавляем "да" в 11-ю ячейку после отправки уведомления
                 cargo_row_index = cargo_data.index(row) + 1
                 sheet.update_cell(cargo_row_index, 12, "да")
@@ -84,8 +85,8 @@ def update_cargo_notifications(call, bot):
                 bot.send_message(user_id, f"Груз с идентификатором {cargo_id} обновил рассылку.")
 
 
-def notify_drivers_about_new_cargo(from_location, loadtype, weight, bot):
-    drivers_with_matching_city = user_utils.get_drivers_in_city_with_loadtype_and_weight(from_location, loadtype, weight)
+def notify_drivers_about_new_cargo(from_location, loadtype, weight,volume, bot):
+    drivers_with_matching_city = user_utils.get_drivers_in_city_with_loadtype_weight_and_volume(from_location, loadtype,volume, weight)
 
     if drivers_with_matching_city:
         message = "Привет! Появился свежий груз в твоем городе!"

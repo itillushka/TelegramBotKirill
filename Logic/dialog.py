@@ -103,13 +103,33 @@ def ask_cargo_from(message, bot):
 def ask_cargo_to(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_to"] = message.text
-    bot.send_message(user_id, "3. Объем груза?")
+    bot.send_message(user_id, "3. Объем груза в метрах кубических, если не знает то введите размерность по примеру '2.1/4.2/2.0'")
     bot.register_next_step_handler(message, ask_cargo_volume, bot)
 
 
 def ask_cargo_volume(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_volume"] = message.text
+
+    # Разделяем текст сообщения по символу "/", если он присутствует
+    volume_input = message.text.split("/")
+
+    # Инициализируем переменную для хранения объема
+    cargo_volume = 0
+
+    if len(volume_input) == 1:
+        # Если введен только одно число, сохраняем его как объем
+        cargo_volume = volume_input[0]
+    elif len(volume_input) >= 2:
+        # Если введено два или более числа, попробуем перемножить их
+        try:
+            cargo_volume = float(volume_input[0]) * float(volume_input[1])
+        except ValueError:
+            # Если не удалось перемножить числа, оставляем значение нулевым
+            cargo_volume = 0
+
+    user_dict.user_data[user_id]["cargo_volume"] = cargo_volume
+
     bot.send_message(user_id, "4. Тип загрузки (Верхний/Задний/Боковой)?")
     bot.register_next_step_handler(message, ask_cargo_loadtype, bot)
 

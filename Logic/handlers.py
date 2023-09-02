@@ -76,11 +76,17 @@ def handle_driver_choice(call, bot):
     if choice == "my_data":
         user_data_get = user_utils.get_displayed_user_data(user_utils.get_user_data(user_id))
         if user_data_get:
+            markup = types.InlineKeyboardMarkup(row_width=2)
+            edit_button = types.InlineKeyboardButton("Изменить", callback_data="edit_data")
+            back_button = types.InlineKeyboardButton("Назад", callback_data="back")
+            markup.add(edit_button, back_button)
             response = "👤 Ваши данные:\n"
             for key, value in user_data_get.items():
                 response += f"✅ {key.capitalize()}: {value}\n"
-            with open(user_dict.USER_DATA_PHOTO, 'rb') as photo:
-                bot.send_photo(user_id, photo, caption=response)
+
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=response, reply_markup=markup)
+            #with open(user_dict.USER_DATA_PHOTO, 'rb') as photo:
+            #    bot.send_photo(user_id, photo, caption=response, reply_markup=markup)
         else:
             bot.send_message(user_id, "🚫 Ваши данные не найдены.")
     elif choice == "view_cargo":
@@ -88,8 +94,14 @@ def handle_driver_choice(call, bot):
         if user_data and user_data["role"] == "Водитель":
             residence_city = user_data["city"]  # Город проживания водителя
             cargo_type = user_data["loadtype"]  # Тип загрузки водителя
+            car_payload = float(user_data["payload"])
+            car_volume = user_data["dimensions"]
 
-            sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)
+            # Разбиваем текстовое значение размерности кузова на отдельные числа
+            car_dimensions = car_volume.split('/')
+            car_dimensions = [float(dim) for dim in car_dimensions]
+
+            sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_APPROVED_CARGO_DATA).get_worksheet(0)
 
             cargo_buttons = []
             cargo_data = sheet.get_all_values()[1:]  # Пропускаем заголовок
@@ -97,7 +109,22 @@ def handle_driver_choice(call, bot):
             for row in cargo_data:
                 from_location = row[1]
                 cargo_row_type = row[5]  # Тип загрузки из таблицы
-                if from_location == residence_city and cargo_row_type == cargo_type:
+                cargo_volume = row[3]  # Объем груза из таблицы
+                cargo_weight = float(row[4])  # Вес груза из таблицы
+
+                # Разбиваем текстовое значение размерности груза на отдельные числа
+                cargo_dimensions = cargo_volume.split('/')
+                cargo_dimensions = [float(dim) for dim in cargo_dimensions]
+
+                # Проверяем, подходит ли груз по объему и весу
+                if (
+                        from_location == residence_city
+                        and cargo_row_type == cargo_type
+                        and cargo_weight <= car_payload  # Проверка по грузоподъемности
+                        and all(cargo_dim <= car_dim for cargo_dim, car_dim in zip(cargo_dimensions, car_dimensions))
+                        and (cargo_dimensions[0] * cargo_dimensions[1] * cargo_dimensions[2]) <= (
+                        car_dimensions[0] * car_dimensions[1] * car_dimensions[2])  # Проверка по общему объему
+                ):
                     cargo_id = row[0]
                     to_location = row[2]
                     cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",
@@ -112,7 +139,6 @@ def handle_driver_choice(call, bot):
 
             with open(user_dict.CARGO_LIST_PHOTO, 'rb') as photo:
                 bot.send_photo(user_id, photo, caption="Выберите груз:", reply_markup=cargo_buttons_markup)
-
         else:
             bot.send_message(user_id, "У вас нет доступа к выбору грузов.")
     elif choice == "view_broker":
@@ -197,6 +223,7 @@ def handle_history(call, bot):
 
         recent_button = types.InlineKeyboardButton("📆 Недавние", callback_data="recent_history")
         unpaid_button = types.InlineKeyboardButton("💲 Неоплаченные", callback_data="unpaid_history")
+
 
         cargo_buttons = []
 
@@ -283,3 +310,7 @@ def handle_update_notifications(call, bot):
     add_data.update_cargo_notifications(call, bot)
     bot.send_message(call.from_user.id, "Рассылка обновлена!")
 
+
+def handle_edit_data(call, bot):
+    user_id = call.from_user.id
+    bot.send_message(user_id, "Пожалуйста обратитесь к администрации за этими контактными данными:")

@@ -91,6 +91,11 @@ def update_notifications(call):
     handlers.handle_update_notifications(call, bot)
 
 
+@bot.callback_query_handler(func=lambda call: call.data == "edit_data")
+def update_notifications(call):
+    handlers.handle_edit_data(call, bot)
+
+
 try:
     bot.polling()
 except gspread.exceptions.APIError:

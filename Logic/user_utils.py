@@ -73,20 +73,32 @@ def get_displayed_user_data(raw_user_data):
         return {}
 
 
-def get_drivers_in_city_with_loadtype_and_weight(city, loadtype, cargo_weight):
+def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_weight, cargo_volume):
     sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
     driver_ids = []
+
     for idx, row in enumerate(sheet.get_all_values(), start=1):  # Пропускаем заголовок
         if (
-            row[8] == city  # Проверяем город проживания
-            and row[1] == "Водитель"  # Проверяем роль
-            and int(row[5]) >= int(cargo_weight)  # Проверяем, что вес груза меньше или равен грузоподъемности автомобиля
-            and row[12] == loadtype  # Проверяем тип загрузки
+                row[8] == city  # Проверяем город проживания
+                and row[1] == "Водитель"  # Проверяем роль
+                and int(row[5]) >= int(
+            cargo_weight)  # Проверяем, что вес груза меньше или равен грузоподъемности автомобиля
+                and row[12] == loadtype  # Проверяем тип загрузки
         ):
-            driver_ids.append(int(row[0]))  # Добавляем идентификатор водителя
+            # Проверяем, подходит ли водитель по объему кузова
+            dimensions = row[6]  # Получаем размеры кузова
+            try:
+                dimensions_list = [float(val) for val in dimensions.split("/")]
+                product_dimensions = 1
+                for dimension in dimensions_list:
+                    product_dimensions *= dimension
+                if product_dimensions >= cargo_volume:
+                    driver_ids.append(int(row[0]))  # Добавляем идентификатор водителя
+            except ValueError:
+                # Если размеры кузова не удалось корректно обработать, пропускаем этого водителя
+                continue
 
     return driver_ids
-
 
 
 def get_broker_data(broker_id):
