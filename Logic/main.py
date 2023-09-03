@@ -84,6 +84,11 @@ def handle_cargo(message):
     handlers.handle_cargo(message, bot)
 
 
+@bot.callback_query_handler(func=lambda call: call.data == "next_cargo")
+def handle_cargo_questions(call):
+    handlers.handle_cargo_questions(call, bot)
+
+
 @bot.callback_query_handler(func=lambda call: call.data.startswith("history_"))
 def handle_history_details(call):
     handlers.handle_history_details(call, bot)

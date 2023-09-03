@@ -39,8 +39,10 @@ def handle_broker_role(call, bot):
 
     # Отправляем сообщение с кнопкой
     with open(user_dict.REGISTRATION_PHOTO, 'rb') as photo:
-        bot.send_photo(user_id, photo, caption="Спасибо, что хотите пополнить нашу команду диспетчеров!\nПрошу вас заполнить Гугл форму, "
-                     "чтобы мы узнали о вас побольше!\nДля заполнения формы, перейдите по ссылке ниже:", reply_markup=markup)
+        bot.send_photo(user_id, photo,
+                       caption="Спасибо, что хотите пополнить нашу команду диспетчеров!\nПрошу вас заполнить Гугл форму, "
+                               "чтобы мы узнали о вас побольше!\nДля заполнения формы, перейдите по ссылке ниже:",
+                       reply_markup=markup)
 
 
 def handle_driver_role(call, bot):
@@ -56,7 +58,7 @@ def handle_driver_role(call, bot):
         view_history_button = types.InlineKeyboardButton("История заказов", callback_data="view_history")
         markup.add(my_data_button, view_cargo_button, view_broker_button, view_history_button)
 
-        #bot.send_message(user_id, "Добро пожаловать в меню водителя!", reply_markup=markup)
+        # bot.send_message(user_id, "Добро пожаловать в меню водителя!", reply_markup=markup)
         with open(user_dict.CARGO_LIST_PHOTO, 'rb') as photo:
             bot.send_photo(user_id, photo, caption="Добро пожаловать в меню водителя!", reply_markup=markup)
 
@@ -244,9 +246,14 @@ def handle_finish(call, bot):
 def handle_cargo(call, bot):
     user_id = call.from_user.id
     user_dict.user_data[user_id] = {}
+
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    back_button = types.InlineKeyboardButton("Назад", callback_data="back")
+    next_button = types.InlineKeyboardButton("Рассчитать доставку", callback_data="next_cargo")
+    markup.add(next_button, back_button)
+
     with open(user_dict.CARGO_PHOTO, 'rb') as photo:
-        bot.send_photo(user_id, photo, caption="Введите данные о грузе.\n\n1. Откуда?")
-    bot.register_next_step_handler(call, dialog.ask_cargo_from, bot)
+        bot.send_photo(user_id, photo, caption="Выберите опцию", reply_markup=markup)
 
 
 def handle_history(call, bot):
@@ -280,6 +287,12 @@ def handle_history(call, bot):
 
     else:
         bot.send_message(user_id, "У вас нет доступа к истории заказов.")
+
+
+def handle_cargo_questions(call, bot):
+    user_id = call.from_user.id
+    bot.send_message(user_id, "Введите данные о грузе.\n\n1. Откуда?")
+    bot.register_next_step_handler(call.message, dialog.ask_cargo_from, bot)
 
 
 def handle_history_details(call, bot):
