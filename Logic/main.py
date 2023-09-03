@@ -39,17 +39,17 @@ def broker(message):
     handlers.broker(message, bot)
 
 
-@bot.message_handler(func=lambda message: message.text == "📞 Диспетчерам")
+@bot.message_handler(func=lambda message: message.text == "Диспетчерам")
 def handle_broker_role(call):
     handlers.handle_broker_role(call, bot)
 
 
-@bot.message_handler(func=lambda message: message.text == "🚚 Перевозчикам")
+@bot.message_handler(func=lambda message: message.text == "Перевозчикам")
 def handle_driver_role(call):
     handlers.handle_driver_role(call, bot)
 
 
-@bot.message_handler(func=lambda message: message.text == "👥 Сообщество")
+@bot.message_handler(func=lambda message: message.text == "Сообщество")
 def handle_community_button(message):
     handlers.handle_community(message, bot)
 
@@ -79,7 +79,7 @@ def handle_finish(call):
     handlers.handle_finish(call, bot)
 
 
-@bot.message_handler(func=lambda message: message.text == "📦 Отправить груз")
+@bot.message_handler(func=lambda message: message.text == "Отправить груз")
 def handle_cargo(message):
     handlers.handle_cargo(message, bot)
 

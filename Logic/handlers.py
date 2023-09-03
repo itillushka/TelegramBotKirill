@@ -8,10 +8,10 @@ import user_utils
 
 def start(message, bot):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    broker_button = types.KeyboardButton("🚚 Перевозчикам")
-    driver_button = types.KeyboardButton("📞 Диспетчерам")
-    cargo_button = types.KeyboardButton("📦 Отправить груз")
-    community_button = types.KeyboardButton("👥 Сообщество")
+    broker_button = types.KeyboardButton("Перевозчикам")
+    driver_button = types.KeyboardButton("Диспетчерам")
+    cargo_button = types.KeyboardButton("Отправить груз")
+    community_button = types.KeyboardButton("Сообщество")
     markup.add(broker_button, driver_button, cargo_button, community_button)
 
     with open(user_dict.START_PHOTO, 'rb') as photo:
@@ -63,7 +63,7 @@ def handle_driver_role(call, bot):
     elif registered and user_role == "Брокер":
         bot.send_message(user_id, "Вы не имеете доступа к роли Перевозчика.")
     elif not registered:
-        start_button = types.InlineKeyboardButton("🟢 Начать", callback_data="start_driver")
+        start_button = types.InlineKeyboardButton("Начать", callback_data="start_driver")
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(start_button)
         with open(user_dict.REGISTRATION_PHOTO, 'rb') as photo:
