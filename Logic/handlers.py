@@ -32,16 +32,15 @@ def start_driver(call, bot):
 
 def handle_broker_role(call, bot):
     user_id = call.from_user.id
-    bot.send_message(user_id,
-                     "Спасибо, что хотите пополнить нашу команду диспетчеров!\nПрошу вас заполнить Гугл форму, "
-                     "чтобы мы узнали о вас побольше!")
     # Создаем кнопку для перенаправления на сайт Google
     markup = types.InlineKeyboardMarkup(row_width=1)
     google_button = types.InlineKeyboardButton("Перейти к Гугл форме", url="https://forms.gle/rDtNM8sN8JRiaJpp6")
     markup.add(google_button)
 
     # Отправляем сообщение с кнопкой
-    bot.send_message(user_id, "Для заполнения формы, перейдите по ссылке ниже:", reply_markup=markup)
+    with open(user_dict.REGISTRATION_PHOTO, 'rb') as photo:
+        bot.send_photo(user_id, photo, caption="Спасибо, что хотите пополнить нашу команду диспетчеров!\nПрошу вас заполнить Гугл форму, "
+                     "чтобы мы узнали о вас побольше!\nДля заполнения формы, перейдите по ссылке ниже:", reply_markup=markup)
 
 
 def handle_driver_role(call, bot):
@@ -57,7 +56,9 @@ def handle_driver_role(call, bot):
         view_history_button = types.InlineKeyboardButton("История заказов", callback_data="view_history")
         markup.add(my_data_button, view_cargo_button, view_broker_button, view_history_button)
 
-        bot.send_message(user_id, "Добро пожаловать в меню водителя!", reply_markup=markup)
+        #bot.send_message(user_id, "Добро пожаловать в меню водителя!", reply_markup=markup)
+        with open(user_dict.CARGO_LIST_PHOTO, 'rb') as photo:
+            bot.send_photo(user_id, photo, caption="Добро пожаловать в меню водителя!", reply_markup=markup)
 
     elif registered and user_role == "Брокер":
         bot.send_message(user_id, "Вы не имеете доступа к роли Перевозчика.")
@@ -68,9 +69,12 @@ def handle_driver_role(call, bot):
         with open(user_dict.REGISTRATION_PHOTO, 'rb') as photo:
             bot.send_photo(user_id, photo, caption="Пожалуйста, ответьте на несколько вопросов:", reply_markup=markup)
 
+
 def is_single_number(volume_str):
     # Проверяем, содержит ли строка символ "/"
     return '/' not in volume_str
+
+
 def handle_driver_choice(call, bot):
     user_id = call.from_user.id
     choice = call.data
@@ -86,10 +90,12 @@ def handle_driver_choice(call, bot):
             for key, value in user_data_get.items():
                 response += f"✅ {key.capitalize()}: {value}\n"
 
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=response,
-                                  reply_markup=markup)
-            # with open(user_dict.USER_DATA_PHOTO, 'rb') as photo:
-            #    bot.send_photo(user_id, photo, caption=response, reply_markup=markup)
+            # bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=response,
+            #                     reply_markup=markup)
+            with open(user_dict.USER_DATA_PHOTO, 'rb') as photo:
+                bot.send_photo(user_id, photo, caption=response, reply_markup=markup)
+                # Удаление меню
+                bot.delete_message(user_id, call.message.message_id)
         else:
             bot.send_message(user_id, "🚫 Ваши данные не найдены.")
     elif choice == "view_cargo":
@@ -142,7 +148,8 @@ def handle_driver_choice(call, bot):
                             from_location == residence_city
                             and cargo_row_type == cargo_type
                             and cargo_weight <= car_payload
-                            and all(cargo_dim <= car_dim for cargo_dim, car_dim in zip(cargo_dimensions, car_dimensions))
+                            and all(
+                        cargo_dim <= car_dim for cargo_dim, car_dim in zip(cargo_dimensions, car_dimensions))
                             and (cargo_dimensions[0] * cargo_dimensions[1] * cargo_dimensions[2]) <= (
                             car_dimensions[0] * car_dimensions[1] * car_dimensions[2])
                             and car_distance >= cargo_distance
@@ -157,10 +164,13 @@ def handle_driver_choice(call, bot):
             cargo_buttons.append(finish_button)
 
             cargo_buttons_markup = types.InlineKeyboardMarkup(row_width=1)
-            cargo_buttons_markup.add(*cargo_buttons)
+            back_button = types.InlineKeyboardButton("Назад", callback_data="back")
+            cargo_buttons_markup.add(*cargo_buttons, back_button)
 
             with open(user_dict.CARGO_LIST_PHOTO, 'rb') as photo:
                 bot.send_photo(user_id, photo, caption="Выберите груз:", reply_markup=cargo_buttons_markup)
+                # Удаление меню
+                bot.delete_message(user_id, call.message.message_id)
         else:
             bot.send_message(user_id, "У вас нет доступа к выбору грузов.")
     elif choice == "view_broker":
@@ -173,13 +183,16 @@ def handle_driver_choice(call, bot):
                     phone_buttons_markup = types.InlineKeyboardMarkup(row_width=1)
                     phone_button = types.InlineKeyboardButton(f"Позвонить: +{broker_data['phone']}",
                                                               url=f"http://onmap.uz/tel/{broker_data['phone']}")
-                    phone_buttons_markup.add(phone_button)
+                    back_button = types.InlineKeyboardButton("Назад", callback_data="back")
+                    phone_buttons_markup.add(phone_button, back_button)
                     response = f"Данные диспетчера:" \
                                f"\n\nФИО: {broker_data['fullname']}\n" \
                                f"Телефон: {broker_data['phone']}\n" \
                                f"Telegram: {broker_data['telegram']}"
                     with open(user_dict.BROKER_PHOTO, 'rb') as photo:
                         bot.send_photo(user_id, photo, caption=response, reply_markup=phone_buttons_markup)
+                        # Удаление меню
+                        bot.delete_message(user_id, call.message.message_id)
 
                 else:
                     bot.send_message(user_id, "Диспетчер не найден.")
@@ -245,6 +258,7 @@ def handle_history(call, bot):
 
         recent_button = types.InlineKeyboardButton("📆 Недавние", callback_data="recent_history")
         unpaid_button = types.InlineKeyboardButton("💲 Неоплаченные", callback_data="unpaid_history")
+        back_button = types.InlineKeyboardButton("Назад", callback_data="back")
 
         cargo_buttons = []
 
@@ -258,9 +272,11 @@ def handle_history(call, bot):
         else:
             cargo_buttons.append(types.InlineKeyboardButton("История заказов пуста.", callback_data="dummy"))
 
-        markup.add(recent_button, unpaid_button, *cargo_buttons)
+        markup.add(recent_button, unpaid_button, *cargo_buttons, back_button)
         with open(user_dict.CARGO_HISTORY_PHOTO, 'rb') as photo:
             bot.send_photo(user_id, photo, caption="📚 История заказов:", reply_markup=markup)
+            # Удаление меню
+            bot.delete_message(user_id, call.message.message_id)
 
     else:
         bot.send_message(user_id, "У вас нет доступа к истории заказов.")
