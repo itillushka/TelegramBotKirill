@@ -1,6 +1,7 @@
 import user_utils
 import user_dict
 from telebot import types
+import bot_responses
 
 
 def add_chosen_cargo(user_id, chosen_cargo_ids):
@@ -71,13 +72,17 @@ def update_cargo_notifications(call, bot):
 
         if not approved:
             from_location = row[1]
-            loadtype = row[6]
-            weight = row[5]
+            to_location = row[2]
+            distance = row[3]
             volume = row[4]
+            weight = row[5]
+            loadtype = row[6]
+            payment = row[8]
+            comments = row[10]
 
             # Проверяем, есть ли идентификатор груза в ячейке столбца номер 11
             if cargo_id not in row[12:]:
-                notify_drivers_about_new_cargo(from_location, loadtype, weight, volume, bot)
+                notify_drivers_about_new_cargo(from_location, to_location, distance,1,1, volume, weight, loadtype, payment, comments, bot)
                 # Добавляем "да" в 11-ю ячейку после отправки уведомления
                 cargo_row_index = cargo_data.index(row) + 1
                 sheet.update_cell(cargo_row_index, 13, "да")
@@ -85,11 +90,12 @@ def update_cargo_notifications(call, bot):
                 bot.send_message(user_id, f"Груз с идентификатором {cargo_id} обновил рассылку.")
 
 
-def notify_drivers_about_new_cargo(from_location, loadtype, weight,volume, bot):
+def notify_drivers_about_new_cargo(from_location, to_location, distance, date_from, date_to, volume, weight, loadtype, payment, comments, bot):
     drivers_with_matching_city = user_utils.get_drivers_in_city_with_loadtype_weight_and_volume(from_location, loadtype,volume, weight)
 
     if drivers_with_matching_city:
-        message = "Привет! Появился свежий груз в твоем городе!"
+        #message = "Привет! Появился свежий груз в твоем городе!"
+        message_str = bot_responses.new_cargo_response(from_location, to_location, distance, date_from, date_to, weight, volume, comments, payment)
         for driver_id in drivers_with_matching_city:
             driver_data = user_utils.get_user_data(driver_id)
             if driver_data and driver_data["loadtype"] == loadtype:
@@ -99,4 +105,4 @@ def notify_drivers_about_new_cargo(from_location, loadtype, weight,volume, bot):
                 cargo_buttons_markup.add(cargo_button)
 
                 with open(user_dict.NEW_CARGO_PHOTO, 'rb') as photo:
-                    bot.send_photo(driver_id, photo, caption=message, reply_markup=cargo_buttons_markup)
+                    bot.send_photo(driver_id, photo, caption=message_str, reply_markup=cargo_buttons_markup)

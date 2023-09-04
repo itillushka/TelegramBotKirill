@@ -51,28 +51,6 @@ def get_user_data(user_id):
         return {}
 
 
-def get_displayed_user_data(raw_user_data):
-    if "role" in raw_user_data:
-        user_data_disp = {
-            "Профессия": raw_user_data["role"],
-            "ФИО": raw_user_data["fullname"],
-            "Номер телефона": raw_user_data["phone"],
-            "Гос.знак": raw_user_data["sign"],
-            "Грузоподьемность": raw_user_data["payload"],
-            "Измерения": raw_user_data["dimensions"],
-            "Тип кузова": raw_user_data["bodytype"],
-            "Город проживания": raw_user_data["city"],
-            "Дистанция": raw_user_data["distance"],
-            "Юридический статус": raw_user_data["legalstatus"],
-            "Владение автомобилем": raw_user_data["carownership"],
-            "Тип загрузки": raw_user_data["loadtype"],
-            "Идентификатор диспетчера": raw_user_data["broker_id"]
-        }
-        return user_data_disp
-    else:
-        return {}
-
-
 def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_weight, cargo_volume):
     sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
     driver_ids = []

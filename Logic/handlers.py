@@ -4,6 +4,7 @@ import add_data
 import dialog
 import user_dict
 import user_utils
+import bot_responses
 
 
 def start(message, bot):
@@ -82,15 +83,13 @@ def handle_driver_choice(call, bot):
     choice = call.data
 
     if choice == "my_data":
-        user_data_get = user_utils.get_displayed_user_data(user_utils.get_user_data(user_id))
+        user_data_get = bot_responses.user_data_response(user_utils.get_user_data(user_id))
         if user_data_get:
             markup = types.InlineKeyboardMarkup(row_width=2)
             edit_button = types.InlineKeyboardButton("Изменить", callback_data="edit_data")
             back_button = types.InlineKeyboardButton("Назад", callback_data="back")
             markup.add(edit_button, back_button)
-            response = "👤 Ваши данные:\n"
-            for key, value in user_data_get.items():
-                response += f"✅ {key.capitalize()}: {value}\n"
+            response = user_data_get
 
             # bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=response,
             #                     reply_markup=markup)
