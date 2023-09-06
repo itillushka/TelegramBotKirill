@@ -94,7 +94,7 @@ def handle_driver_choice(call, bot):
             # bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=response,
             #                     reply_markup=markup)
             with open(user_dict.USER_DATA_PHOTO, 'rb') as photo:
-                bot.send_photo(user_id, photo, caption=response, reply_markup=markup)
+                bot.send_photo(user_id, photo, caption=response, reply_markup=markup, parse_mode='HTML')
                 # Удаление меню
                 bot.delete_message(user_id, call.message.message_id)
         else:
@@ -186,12 +186,13 @@ def handle_driver_choice(call, bot):
                                                               url=f"http://onmap.uz/tel/{broker_data['phone']}")
                     back_button = types.InlineKeyboardButton("Назад", callback_data="back")
                     phone_buttons_markup.add(phone_button, back_button)
-                    response = f"Данные диспетчера:" \
+                    '''response = f"Данные диспетчера:" \
                                f"\n\nФИО: {broker_data['fullname']}\n" \
                                f"Телефон: {broker_data['phone']}\n" \
-                               f"Telegram: {broker_data['telegram']}"
+                               f"Telegram: {broker_data['telegram']}"'''
+                    response = bot_responses.broker_data_response(broker_data)
                     with open(user_dict.BROKER_PHOTO, 'rb') as photo:
-                        bot.send_photo(user_id, photo, caption=response, reply_markup=phone_buttons_markup)
+                        bot.send_photo(user_id, photo, caption=response, reply_markup=phone_buttons_markup, parse_mode='HTML')
                         # Удаление меню
                         bot.delete_message(user_id, call.message.message_id)
 

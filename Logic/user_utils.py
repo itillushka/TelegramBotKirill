@@ -59,24 +59,37 @@ def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_we
         if (
                 row[8] == city  # Проверяем город проживания
                 and row[1] == "Водитель"  # Проверяем роль
-                and int(row[5]) >= int(
-            cargo_weight)  # Проверяем, что вес груза меньше или равен грузоподъемности автомобиля
+                and int(row[5]) >= int(cargo_weight)  # Проверяем, что вес груза меньше или равен грузоподъемности автомобиля
                 and row[12] == loadtype  # Проверяем тип загрузки
         ):
             # Проверяем, подходит ли водитель по объему кузова
             dimensions = row[6]  # Получаем размеры кузова
             try:
+                # Пытаемся преобразовать размеры кузова в список чисел
                 dimensions_list = [float(val) for val in dimensions.split("/")]
                 product_dimensions = 1
                 for dimension in dimensions_list:
                     product_dimensions *= dimension
+                if '/' not in cargo_volume:
+                    # Если cargo_volume - это одно число, то преобразуем его в число
+                    cargo_volume = float(cargo_volume)
+                else:
+                    # Если cargo_volume - это размерности, то также преобразуем их в число
+                    cargo_dimensions = [float(val) for val in cargo_volume.split("/")]
+                    cargo_volume = 1
+                    for dimension in cargo_dimensions:
+                        cargo_volume *= dimension
+
                 if product_dimensions >= cargo_volume:
                     driver_ids.append(int(row[0]))  # Добавляем идентификатор водителя
             except ValueError:
-                # Если размеры кузова не удалось корректно обработать, пропускаем этого водителя
+                # Если размеры кузова или cargo_volume не удалось корректно обработать, пропускаем этого водителя
                 continue
 
     return driver_ids
+
+
+
 
 
 def get_broker_data(broker_id):
