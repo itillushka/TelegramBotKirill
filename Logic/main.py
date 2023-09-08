@@ -7,7 +7,7 @@ import handlers
 TOKEN = '6633230318:AAEPmoWn2SgZsenyflbzZEP2hJ_Fgg6-diM'
 bot = telebot.TeleBot(TOKEN)
 # Путь к файлу JSON с учетными данными для доступа к Google Таблицам
-JSON_PATH = "credentials.json"
+JSON_PATH = "../credentials.json"
 
 # Создаем объект для работы с Google Таблицами
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
