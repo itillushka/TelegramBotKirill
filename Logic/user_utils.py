@@ -66,8 +66,12 @@ def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_we
             dimensions = row[6]  # Получаем размеры кузова
             try:
                 # Преобразуем cargo_volume в число (если оно строка)
-                print(cargo_volume)
-                if not isinstance(cargo_volume, (int, float)):
+                if '/' in cargo_volume:
+                    cargo_dimensions = [float(val) for val in cargo_volume.split("/")]
+                    cargo_volume = 1
+                    for dimension in cargo_dimensions:
+                        cargo_volume *= dimension
+                else:
                     cargo_volume = float(cargo_volume)
 
                 # Продолжаем сравнение как и ранее
@@ -75,21 +79,14 @@ def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_we
                 product_dimensions = 1
                 for dimension in dimensions_list:
                     product_dimensions *= dimension
-                    print(product_dimensions)
+
                 if product_dimensions >= cargo_volume:
-                    driver_ids.append(int(row[0]))  # Добавляем идентификатор водителяr
-                    print(driver_ids)
+                    driver_ids.append(int(row[0]))  # Добавляем идентификатор водителя
             except ValueError:
                 # Если размеры кузова или cargo_volume не удалось корректно обработать, пропускаем этого водителя
                 continue
 
     return driver_ids
-
-
-
-
-
-
 
 def get_broker_data(broker_id):
     sheet = client.open_by_key(SPREADSHEET_ID_BROKER_DATA).get_worksheet(0)
