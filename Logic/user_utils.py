@@ -66,6 +66,7 @@ def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_we
             dimensions = row[6]  # Получаем размеры кузова
             try:
                 # Преобразуем cargo_volume в число (если оно строка)
+                print(cargo_volume)
                 if not isinstance(cargo_volume, (int, float)):
                     cargo_volume = float(cargo_volume)
 
@@ -74,9 +75,10 @@ def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_we
                 product_dimensions = 1
                 for dimension in dimensions_list:
                     product_dimensions *= dimension
-
+                    print(product_dimensions)
                 if product_dimensions >= cargo_volume:
-                    driver_ids.append(int(row[0]))  # Добавляем идентификатор водителя
+                    driver_ids.append(int(row[0]))  # Добавляем идентификатор водителяr
+                    print(driver_ids)
             except ValueError:
                 # Если размеры кузова или cargo_volume не удалось корректно обработать, пропускаем этого водителя
                 continue
