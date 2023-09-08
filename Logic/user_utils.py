@@ -1,7 +1,7 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-JSON_PATH = 'credentials.json'
+JSON_PATH = 'Logic/credentials.json'
 SPREADSHEET_ID_USER_DATA = '1Ru0mMLA8L6GyTPjvrFXIZ-dGN6u_CaHVsZiHVJo9R6w'
 SPREADSHEET_ID_CARGO_DATA = '11bCdYF4Mt7ZJ9U9gkpKOUnMaBDIqYk3J2DoqQ4v6KFA'
 SPREADSHEET_ID_APPROVED_CARGO_DATA = '1Eph_4O0fJzbAITj98-1aigGct9YPyizM7WZ7dCDC-Pw'
