@@ -65,16 +65,9 @@ def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_we
             # Проверяем, подходит ли водитель по объему кузова
             dimensions = row[6]  # Получаем размеры кузова
             try:
-                # Проверяем, является ли cargo_volume строкой (размерностью)
-                if '/' not in cargo_volume:
-                    # Если cargo_volume - это одно число, то преобразуем его в число
+                # Преобразуем cargo_volume в число (если оно строка)
+                if not isinstance(cargo_volume, (int, float)):
                     cargo_volume = float(cargo_volume)
-                else:
-                    # Если cargo_volume - это размерности, то также преобразуем их в число
-                    cargo_dimensions = [float(val) for val in cargo_volume.split("/")]
-                    cargo_volume = 1
-                    for dimension in cargo_dimensions:
-                        cargo_volume *= dimension
 
                 # Продолжаем сравнение как и ранее
                 dimensions_list = [float(val) for val in dimensions.split("/")]
@@ -89,6 +82,7 @@ def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_we
                 continue
 
     return driver_ids
+
 
 
 
