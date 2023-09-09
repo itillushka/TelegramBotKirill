@@ -46,7 +46,7 @@ def back_cargo(call):
 
         # Очищаем данные пользователя и возвращаем его в начальное состояние
         user_dict.user_data[user_id] = {}
-
+        bot.delete_message(chat_id_to_delete, message_id_to_delete + 1)
         # Отправляем сообщение, чтобы пользователь знал, что диалог прерван
         bot.send_message(chat_id_to_delete, "Диалог прерван. Вы вернулись в начальное состояние.")
 
