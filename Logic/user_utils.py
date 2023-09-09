@@ -56,7 +56,6 @@ def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_we
     driver_ids = []
 
     for idx, row in enumerate(sheet.get_all_values(), start=1):  # Пропускаем заголовок
-        print(f"City={city},Loadtype={loadtype},Cargoweight={cargo_weight},Cargovolume{cargo_volume}")
         if (
                 row[8] == city  # Проверяем город проживания
                 and row[1] == "Водитель"  # Проверяем роль
@@ -67,8 +66,8 @@ def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_we
             dimensions = row[6]  # Получаем размеры кузова
             try:
                 # Преобразуем cargo_volume в число (если оно строка)
-                if '/' in cargo_volume:
-                    cargo_dimensions = [float(val) for val in cargo_volume.split("/")]
+                if '/' in str(cargo_volume):
+                    cargo_dimensions = [float(val) for val in str(cargo_volume).split("/")]
                     cargo_volume = 1
                     for dimension in cargo_dimensions:
                         cargo_volume *= dimension
