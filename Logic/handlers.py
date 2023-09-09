@@ -56,6 +56,7 @@ def handle_broker_role(message, bot):
 def handle_driver_role(call, bot):
     user_id = call.from_user.id
     registered, user_role = user_utils.is_user_registered(user_id)
+    chat_id = call.chat.id  # Получаем ID чата, где было вызвано сообщение
 
     if registered and user_role == "Водитель":
 
@@ -69,6 +70,9 @@ def handle_driver_role(call, bot):
         # bot.send_message(user_id, "Добро пожаловать в меню водителя!", reply_markup=markup)
         with open(user_dict.CARGO_LIST_PHOTO, 'rb') as photo:
             bot.send_photo(user_id, photo, caption="Добро пожаловать в меню водителя!", reply_markup=markup)
+
+        # Удаляем сообщение пользователя, которое вызвало метод
+        bot.delete_message(chat_id, call.message_id)
 
     elif registered and user_role == "Брокер":
         bot.send_message(user_id, "Вы не имеете доступа к роли Перевозчика.")
@@ -253,6 +257,7 @@ def handle_finish(call, bot):
 def handle_cargo(call, bot):
     user_id = call.from_user.id
     user_dict.user_data[user_id] = {}
+    chat_id = call.chat.id  # Получаем ID чата, где было вызвано сообщение
 
     markup = types.InlineKeyboardMarkup(row_width=1)
     back_button = types.InlineKeyboardButton("Назад", callback_data="back")
@@ -261,6 +266,9 @@ def handle_cargo(call, bot):
 
     with open(user_dict.CARGO_PHOTO, 'rb') as photo:
         bot.send_photo(user_id, photo, caption="Выберите опцию", reply_markup=markup)
+
+    # Удаляем сообщение пользователя, которое вызвало метод
+    bot.delete_message(chat_id, call.message_id)
 
 
 def handle_history(call, bot):
@@ -352,8 +360,12 @@ def handle_unpaid_cargos(call, bot):
 
 
 def handle_community(message, bot):
+    chat_id = message.chat.id  # Получаем ID чата, где было вызвано сообщение
     community_link = "https://t.me/+j7plDmEkx9wyN2Iy"  # Ссылка на сообщество
     bot.send_message(message.chat.id, f"Добро пожаловать в наше сообщество!\n{community_link}")
+
+    # Удаляем сообщение пользователя, которое вызвало метод
+    bot.delete_message(chat_id, message.message_id)
 
 
 def broker(message, bot):
