@@ -1,7 +1,12 @@
 import add_data
 import user_dict
 
-
+def delete_previous_question_and_answer(user_id, bot, message_id):
+    try:
+        bot.delete_message(user_id, message_id - 1)  # Удаляем предыдущий вопрос
+        bot.delete_message(user_id, message_id)      # Удаляем предыдущий ответ
+    except Exception as e:
+        pass  # Обработка ошибок, если сообщения уже удалены или не существуют
 def ask_phone(message, bot):
     user_id = message.from_user.id
     user_dict.driver_data[user_id]["name"] = message.text
@@ -99,12 +104,18 @@ def ask_cargo_from(message, bot):
     bot.send_message(user_id, "2. Куда?")
     bot.register_next_step_handler(message, ask_cargo_to, bot)
 
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
+
 
 def ask_cargo_to(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_to"] = message.text
     bot.send_message(user_id, "2. Какая дистанция до места доставки (в километрах)?")
     bot.register_next_step_handler(message, ask_cargo_distance, bot)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def ask_cargo_distance(message, bot):
@@ -113,6 +124,9 @@ def ask_cargo_distance(message, bot):
     bot.send_message(user_id,
                      "3. Объем груза в метрах кубических, если не знаете, то введите размерность по примеру '2.1/4.2/2.0'")
     bot.register_next_step_handler(message, ask_cargo_volume, bot)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def ask_cargo_volume(message, bot):
@@ -140,6 +154,9 @@ def ask_cargo_volume(message, bot):
 
     bot.send_message(user_id, "4. Тип загрузки (Верхний/Задний/Боковой)?")
     bot.register_next_step_handler(message, ask_cargo_loadtype, bot)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def ask_cargo_loadtype(message, bot):
@@ -202,5 +219,5 @@ def save_cargo_info(message, bot):
 
     add_data.add_cargo_to_google_sheets(**cargo_info, bot=bot)
     bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")
-    for i in range(23):
-        bot.delete_message(message.chat.id, message.message_id - i)
+
+
