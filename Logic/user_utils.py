@@ -51,11 +51,12 @@ def get_user_data(user_id):
         return {}
 
 
-'''def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_weight, cargo_volume):
+def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_weight, cargo_volume):
     sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
     driver_ids = []
 
     for idx, row in enumerate(sheet.get_all_values(), start=1):  # Пропускаем заголовок
+        print(f"City={city},Loadtype={loadtype},Cargoweight={cargo_weight},Cargovolume{cargo_volume}")
         if (
                 row[8] == city  # Проверяем город проживания
                 and row[1] == "Водитель"  # Проверяем роль
@@ -82,55 +83,13 @@ def get_user_data(user_id):
 
                 if product_dimensions >= cargo_volume:
                     driver_ids.append(int(row[0]))  # Добавляем идентификатор водителя
-            except ValueError:
-                # Если размеры кузова или cargo_volume не удалось корректно обработать, пропускаем этого водителя
-                continue
-
-    return driver_ids'''
-
-
-def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_weight, cargo_volume):
-    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
-    driver_ids = []
-
-    for idx, row in enumerate(sheet.get_all_values(), start=1):  # Пропускаем заголовок
-        if (
-                row[8] == city  # Проверяем город проживания
-                and row[1] == "Водитель"  # Проверяем роль
-                and int(row[5]) >= int(
-            cargo_weight)  # Проверяем, что вес груза меньше или равен грузоподъемности автомобиля
-                and row[12] == loadtype  # Проверяем тип загрузки
-        ):
-            # Проверяем, подходит ли водитель по объему кузова
-            dimensions = row[6]  # Получаем размеры кузова
-            try:
-                # Преобразуем cargo_volume в число (если оно строка)
-                if '/' in cargo_volume:
-                    cargo_dimensions = [float(val) for val in cargo_volume.split("/")]
-                    cargo_volume = 1
-                    for dimension in cargo_dimensions:
-                        cargo_volume *= dimension
-                else:
-                    cargo_volume = float(cargo_volume)
-
-                # Продолжаем сравнение как и ранее
-                dimensions_list = [float(val) for val in dimensions.split("/")]
-                if len(dimensions_list) == 1:
-                    # Если водитель имеет одно число в размерах, то перемножаем его
-                    product_dimensions = dimensions_list[0]
-                else:
-                    # Иначе перемножаем размеры кузова
-                    product_dimensions = 1
-                    for dimension in dimensions_list:
-                        product_dimensions *= dimension
-
-                if product_dimensions >= cargo_volume:
-                    driver_ids.append(int(row[0]))  # Добавляем идентификатор водителя
-            except ValueError:
+            except (ValueError, IndexError):
                 # Если размеры кузова или cargo_volume не удалось корректно обработать, пропускаем этого водителя
                 continue
 
     return driver_ids
+
+
 
 
 def get_broker_data(broker_id):
