@@ -99,7 +99,7 @@ def notify_drivers_about_new_cargo(from_location, to_location, distance, volume,
             driver_data = user_utils.get_user_data(driver_id)
             if driver_data:
                 # Добавляем кнопку "Грузы" под уведомлением
-                cargo_button = types.InlineKeyboardButton("Просмотреть грузы", callback_data="view_cargo")
+                cargo_button = types.InlineKeyboardButton("Забронировать", callback_data="view_cargo")
                 cargo_buttons_markup = types.InlineKeyboardMarkup(row_width=1)
                 cargo_buttons_markup.add(cargo_button)
                 message_str = bot_responses.new_cargo_response(from_location, to_location, distance, weight, volume, comments, payment)
