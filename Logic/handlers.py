@@ -33,6 +33,8 @@ def start_driver(call, bot):
 
 def handle_broker_role(call, bot):
     user_id = call.from_user.id
+    chat_id = call.message.chat.id  # Получаем ID чата, где было вызвано сообщение
+
     # Создаем кнопку для перенаправления на сайт Google
     markup = types.InlineKeyboardMarkup(row_width=1)
     google_button = types.InlineKeyboardButton("Перейти к Гугл форме", url="https://forms.gle/rDtNM8sN8JRiaJpp6")
@@ -44,6 +46,10 @@ def handle_broker_role(call, bot):
                        caption="Спасибо, что хотите пополнить нашу команду диспетчеров!\nПрошу вас заполнить Гугл форму, "
                                "чтобы мы узнали о вас побольше!\nДля заполнения формы, перейдите по ссылке ниже:",
                        reply_markup=markup)
+
+    # Удаляем сообщение пользователя, которое вызвало метод
+    bot.delete_message(chat_id, call.message.message_id)
+
 
 
 def handle_driver_role(call, bot):
