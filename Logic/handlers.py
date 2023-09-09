@@ -263,8 +263,8 @@ def handle_history(call, bot):
     if user_data and user_data["role"] == "Водитель":
         markup = types.InlineKeyboardMarkup(row_width=1)
 
-        recent_button = types.InlineKeyboardButton("📆 Недавние", callback_data="recent_history")
-        unpaid_button = types.InlineKeyboardButton("💲 Неоплаченные", callback_data="unpaid_history")
+        recent_button = types.InlineKeyboardButton(" Недавние", callback_data="recent_history")
+        unpaid_button = types.InlineKeyboardButton(" Неоплаченные", callback_data="unpaid_history")
         back_button = types.InlineKeyboardButton("Назад", callback_data="back")
 
         cargo_buttons = []
