@@ -47,7 +47,7 @@ def add_driver_to_google_sheets(user_id, **data):
 
 
 def add_cargo_to_google_sheets(from_location, to_location, distance, volume, weight, loadtype, description, payment, paymenttype,
-                               contacts, comments, bot):
+                               contacts, comments):
     sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)  # Открываем лист
 
     # Получаем текущее количество строк в таблице
@@ -94,7 +94,6 @@ def notify_drivers_about_new_cargo(from_location, to_location, distance, volume,
     drivers_with_matching_city = user_utils.get_drivers_in_city_with_loadtype_weight_and_volume(from_location, loadtype, weight, volume)
 
     if drivers_with_matching_city:
-        #message = "Привет! Появился свежий груз в твоем городе!"
         for driver_id in drivers_with_matching_city:
             driver_data = user_utils.get_user_data(driver_id)
             if driver_data:

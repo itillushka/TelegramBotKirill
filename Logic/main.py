@@ -32,8 +32,13 @@ def back(call):
     # Затем вызовите другой метод
     handlers.handle_driver_role(call, bot)
 
+@bot.callback_query_handler(func=lambda call: call.data in ["back_cargo"])
+def back_cargo(call):
+    chat_id_to_delete = call.message.chat.id
+    message_id_to_delete = call.message.message_id
 
-
+    # Удалите предыдущее сообщение
+    bot.delete_message(chat_id_to_delete, message_id_to_delete)
 @bot.message_handler(commands=['broker1111'])
 def broker(message):
     handlers.broker(message, bot)

@@ -260,7 +260,7 @@ def handle_cargo(call, bot):
     chat_id = call.chat.id  # Получаем ID чата, где было вызвано сообщение
 
     markup = types.InlineKeyboardMarkup(row_width=1)
-    back_button = types.InlineKeyboardButton("Назад", callback_data="back")
+    back_button = types.InlineKeyboardButton("Назад", callback_data="back_cargo")
     next_button = types.InlineKeyboardButton("Рассчитать доставку", callback_data="next_cargo")
     markup.add(next_button, back_button)
 
