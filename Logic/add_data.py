@@ -47,7 +47,7 @@ def add_driver_to_google_sheets(user_id, **data):
 
 
 def add_cargo_to_google_sheets(from_location, to_location, distance, volume, weight, loadtype, description, payment, paymenttype,
-                               contacts, comments):
+                               contacts, comments, bot):
     sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)  # Открываем лист
 
     # Получаем текущее количество строк в таблице

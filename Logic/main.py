@@ -3,6 +3,7 @@ import telebot
 from oauth2client.service_account import ServiceAccountCredentials
 
 import handlers
+import user_dict
 
 TOKEN = '6633230318:AAEPmoWn2SgZsenyflbzZEP2hJ_Fgg6-diM'
 bot = telebot.TeleBot(TOKEN)
@@ -34,15 +35,27 @@ def back(call):
 
 @bot.callback_query_handler(func=lambda call: call.data in ["back_cargo"])
 def back_cargo(call):
+    user_id = call.from_user.id
     chat_id_to_delete = call.message.chat.id
     message_id_to_delete = call.message.message_id
 
-    # Удалите предыдущее сообщение
-    bot.delete_message(chat_id_to_delete, message_id_to_delete)
+    # Проверяем, начал ли пользователь диалог
+    if "started_dialog" in user_dict.user_data[user_id] and user_dict.user_data[user_id]["started_dialog"]:
+        # Удаляем предыдущее сообщение
+        bot.delete_message(chat_id_to_delete, message_id_to_delete)
 
-    # Отправьте сообщение "Прерывание" и удалите его немедленно
-    bot.send_message(chat_id_to_delete, "Прерывание")
-    bot.delete_message(chat_id_to_delete, message_id_to_delete + 1)  # Удалите сообщение "Прерывание"
+        # Очищаем данные пользователя и возвращаем его в начальное состояние
+        user_dict.user_data[user_id] = {}
+
+        # Отправляем сообщение, чтобы пользователь знал, что диалог прерван
+        bot.send_message(chat_id_to_delete, "Диалог прерван. Вы вернулись в начальное состояние.")
+    else:
+        # Если пользователь не начинал диалог, просто удаляем сообщение
+        bot.delete_message(chat_id_to_delete, message_id_to_delete)
+
+# Где-то в коде, когда пользователь начинает диалог, устанавливаем флаг "started_dialog" в данных пользователя:
+# user_dict.user_data[user_id]["started_dialog"] = True
+
 
 
 @bot.message_handler(commands=['broker1111'])

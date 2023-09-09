@@ -145,7 +145,7 @@ def ask_cargo_from(message, bot):
 def ask_cargo_to(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_to"] = message.text
-    bot.send_message(user_id, "2. Какая дистанция до места доставки (в километрах)?")
+    bot.send_message(user_id, "3. Какая дистанция до места доставки (в километрах)?")
     bot.register_next_step_handler(message, ask_cargo_distance, bot)
 
     # Удаляем предыдущий вопрос и ответ
@@ -156,7 +156,7 @@ def ask_cargo_distance(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_distance"] = message.text
     bot.send_message(user_id,
-                     "3. Объем груза в метрах кубических, если не знаете, то введите размерность по примеру '2.1/4.2/2.0'")
+                     "4. Объем груза в метрах кубических, если не знаете, то введите размерность по примеру '2.1/4.2/2.0'")
     bot.register_next_step_handler(message, ask_cargo_volume, bot)
 
     # Удаляем предыдущий вопрос и ответ
@@ -186,7 +186,7 @@ def ask_cargo_volume(message, bot):
 
     user_dict.user_data[user_id]["cargo_volume"] = cargo_volume
 
-    bot.send_message(user_id, "4. Тип загрузки (Верхний/Задний/Боковой)?")
+    bot.send_message(user_id, "5. Тип загрузки (Верхний/Задний/Боковой)?")
     bot.register_next_step_handler(message, ask_cargo_loadtype, bot)
 
     # Удаляем предыдущий вопрос и ответ
@@ -196,7 +196,7 @@ def ask_cargo_volume(message, bot):
 def ask_cargo_loadtype(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_loadtype"] = message.text
-    bot.send_message(user_id, "5. Вес груза в тоннах?")
+    bot.send_message(user_id, "6. Вес груза в тоннах?")
     bot.register_next_step_handler(message, ask_cargo_weight, bot)
 
     # Удаляем предыдущий вопрос и ответ
@@ -206,7 +206,7 @@ def ask_cargo_loadtype(message, bot):
 def ask_cargo_weight(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_weight"] = message.text
-    bot.send_message(user_id, "6. Описание груза?")
+    bot.send_message(user_id, "7. Описание груза?")
     bot.register_next_step_handler(message, ask_cargo_description, bot)
 
     # Удаляем предыдущий вопрос и ответ
@@ -216,7 +216,7 @@ def ask_cargo_weight(message, bot):
 def ask_cargo_description(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_description"] = message.text
-    bot.send_message(user_id, "7. Оплата (в рублях)?")
+    bot.send_message(user_id, "8. Оплата (в рублях)?")
     bot.register_next_step_handler(message, ask_cargo_payment, bot)
 
     # Удаляем предыдущий вопрос и ответ
@@ -226,7 +226,7 @@ def ask_cargo_description(message, bot):
 def ask_cargo_payment(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_payment"] = message.text
-    bot.send_message(user_id, "8. Каков тип оплаты? НДС, без НДС, на карту, наличными")
+    bot.send_message(user_id, "9. Каков тип оплаты? НДС, без НДС, на карту, наличными")
     bot.register_next_step_handler(message, ask_payment_type, bot)
 
     # Удаляем предыдущий вопрос и ответ
@@ -236,7 +236,7 @@ def ask_cargo_payment(message, bot):
 def ask_payment_type(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["payment_type"] = message.text
-    bot.send_message(user_id, "9. Контакты (телефон и ФИО) через запятую.?")  # Ваш вопрос о типе оплаты
+    bot.send_message(user_id, "10. Контакты (телефон и ФИО) через запятую.?")  # Ваш вопрос о типе оплаты
     bot.register_next_step_handler(message, ask_cargo_contacts, bot)
 
     # Удаляем предыдущий вопрос и ответ
@@ -246,7 +246,7 @@ def ask_payment_type(message, bot):
 def ask_cargo_contacts(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_contacts"] = message.text
-    bot.send_message(user_id, "Комментарии к заказу?")  # Ваш вопрос о комментариях к заказу
+    bot.send_message(user_id, "11. Комментарии к заказу?")  # Ваш вопрос о комментариях к заказу
     bot.register_next_step_handler(message, save_cargo_info, bot)
 
     # Удаляем предыдущий вопрос и ответ

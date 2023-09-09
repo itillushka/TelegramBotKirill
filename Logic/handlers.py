@@ -155,7 +155,7 @@ def handle_driver_choice(call, bot):
                         cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",
                                                                         callback_data=f"cargo_{cargo_id}"))
                 else:
-                    # В противном случае, сравниваем размерности груза и кузова как ранее
+                    # В противном случае сравниваем размерности груза и кузова как ранее
                     if (
                             from_location == residence_city
                             and cargo_row_type == cargo_type
@@ -307,6 +307,7 @@ def handle_history(call, bot):
 def handle_cargo_questions(call, bot):
     user_id = call.from_user.id
     bot.send_message(user_id, "Введите данные о грузе.\n\n1. Откуда?")
+    user_dict.user_data[user_id]["started_dialog"] = True
     bot.register_next_step_handler(call.message, dialog.ask_cargo_from, bot)
 
 
