@@ -2,8 +2,11 @@ def new_cargo_response(from_location, to_location, distance, weight, volume, com
     # Проверяем, содержит ли volume символ "/", если нет, то volume - это одно число
     if '/' in str(volume):
         volume_str = f"<b>Объём, м3:</b> {volume}"
-        dimensions = volume.split("/")
-        dimensions_str = f"<b>ДxШxВ,м:</b> {' x '.join(dimensions)}"
+        dimensions = [float(val) for val in volume.split("/")]
+        dimensions_product = 1
+        for dimension in dimensions:
+            dimensions_product *= dimension
+        dimensions_str = f"<b>ДxШxВ,м:</b> {dimensions_product}"
     else:
         volume_str = "<b>Объём, м3:</b> Отсутствует информация"
         dimensions_str = "<b>ДxШxВ,м:</b> Отсутствует информация"
@@ -21,6 +24,7 @@ def new_cargo_response(from_location, to_location, distance, weight, volume, com
                     f"💵 <b>СТАВКА ₽:</b> {payment}\n\n" \
                     f"📞 <b>ДИСПЕТЧЕР:</b> @Safron195"
     return new_cargo_str
+
 
 
 
