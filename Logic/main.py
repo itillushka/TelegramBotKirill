@@ -49,6 +49,9 @@ def back_cargo(call):
 
         # Отправляем сообщение, чтобы пользователь знал, что диалог прерван
         bot.send_message(chat_id_to_delete, "Диалог прерван. Вы вернулись в начальное состояние.")
+
+        # Очищаем обработчики следующих шагов диалога
+        bot.clear_step_handler_by_chat_id(chat_id_to_delete)
     else:
         # Если пользователь не начинал диалог, просто удаляем сообщение
         bot.delete_message(chat_id_to_delete, message_id_to_delete)
