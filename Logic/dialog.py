@@ -1,18 +1,24 @@
 import add_data
 import user_dict
 
+
 def delete_previous_question_and_answer(user_id, bot, message_id):
     try:
         bot.delete_message(user_id, message_id - 1)  # Удаляем предыдущий вопрос
-        bot.delete_message(user_id, message_id)      # Удаляем предыдущий ответ
-    except Exception as e:
+        bot.delete_message(user_id, message_id)  # Удаляем предыдущий ответ
+    except Exception:
         pass  # Обработка ошибок, если сообщения уже удалены или не существуют
+
+
 def ask_phone(message, bot):
     user_id = message.from_user.id
     user_dict.driver_data[user_id]["name"] = message.text
 
     bot.send_message(message.chat.id, "Ваш телефон?")
     bot.register_next_step_handler(message, ask_car_number, bot)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def ask_car_number(message, bot):
@@ -22,6 +28,9 @@ def ask_car_number(message, bot):
     bot.send_message(message.chat.id, "Государственный знак машины?")
     bot.register_next_step_handler(message, ask_cargo_capacity, bot)
 
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
+
 
 def ask_cargo_capacity(message, bot):
     user_id = message.from_user.id
@@ -29,6 +38,9 @@ def ask_cargo_capacity(message, bot):
 
     bot.send_message(message.chat.id, "Грузоподъемность машины?")
     bot.register_next_step_handler(message, ask_dimensions, bot)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def ask_dimensions(message, bot):
@@ -38,6 +50,9 @@ def ask_dimensions(message, bot):
     bot.send_message(message.chat.id, "Длина/Ширина/Высота машины?")
     bot.register_next_step_handler(message, ask_body_type, bot)
 
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
+
 
 def ask_body_type(message, bot):
     user_id = message.from_user.id
@@ -45,6 +60,9 @@ def ask_body_type(message, bot):
 
     bot.send_message(message.chat.id, "Тип кузова?")
     bot.register_next_step_handler(message, ask_residence_city, bot)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def ask_residence_city(message, bot):
@@ -54,6 +72,9 @@ def ask_residence_city(message, bot):
     bot.send_message(message.chat.id, "Город проживания?")
     bot.register_next_step_handler(message, ask_distance_to_travel, bot)
 
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
+
 
 def ask_distance_to_travel(message, bot):
     user_id = message.from_user.id
@@ -61,6 +82,9 @@ def ask_distance_to_travel(message, bot):
 
     bot.send_message(message.chat.id, "Дистанция, на которую готовы ездить? (в километрах)")
     bot.register_next_step_handler(message, ask_employment_type, bot)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def ask_employment_type(message, bot):
@@ -70,6 +94,9 @@ def ask_employment_type(message, bot):
     bot.send_message(message.chat.id, "Вы являетесь ИП или самозанятым?")
     bot.register_next_step_handler(message, ask_car_ownership, bot)
 
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
+
 
 def ask_car_ownership(message, bot):
     user_id = message.from_user.id
@@ -77,6 +104,9 @@ def ask_car_ownership(message, bot):
 
     bot.send_message(message.chat.id, "У вас машина в аренде или личная?")
     bot.register_next_step_handler(message, save_driver_info, bot)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def save_driver_info(message, bot):
@@ -86,6 +116,9 @@ def save_driver_info(message, bot):
     bot.send_message(message.chat.id, "Какой у вас тип загрузки? Задний/верхний/боковой?")
     bot.register_next_step_handler(message, ask_cargo_loading_type, bot)
 
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
+
 
 def ask_cargo_loading_type(message, bot):
     user_id = message.from_user.id
@@ -94,8 +127,9 @@ def ask_cargo_loading_type(message, bot):
     add_data.add_driver_to_google_sheets(user_id,
                                          **user_dict.driver_data[user_id])  # Добавляем данные о водителе в таблицу
     bot.send_message(user_id, "Спасибо! Ваши данные сохранены.")
-    for i in range(24):
-        bot.delete_message(message.chat.id, message.message_id - i)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def ask_cargo_from(message, bot):
@@ -165,12 +199,18 @@ def ask_cargo_loadtype(message, bot):
     bot.send_message(user_id, "5. Вес груза в тоннах?")
     bot.register_next_step_handler(message, ask_cargo_weight, bot)
 
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
+
 
 def ask_cargo_weight(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_weight"] = message.text
     bot.send_message(user_id, "6. Описание груза?")
     bot.register_next_step_handler(message, ask_cargo_description, bot)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def ask_cargo_description(message, bot):
@@ -179,12 +219,18 @@ def ask_cargo_description(message, bot):
     bot.send_message(user_id, "7. Оплата (в рублях)?")
     bot.register_next_step_handler(message, ask_cargo_payment, bot)
 
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
+
 
 def ask_cargo_payment(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_payment"] = message.text
     bot.send_message(user_id, "8. Каков тип оплаты? НДС, без НДС, на карту, наличными")
     bot.register_next_step_handler(message, ask_payment_type, bot)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def ask_payment_type(message, bot):
@@ -193,12 +239,18 @@ def ask_payment_type(message, bot):
     bot.send_message(user_id, "9. Контакты (телефон и ФИО) через запятую.?")  # Ваш вопрос о типе оплаты
     bot.register_next_step_handler(message, ask_cargo_contacts, bot)
 
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
+
 
 def ask_cargo_contacts(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_contacts"] = message.text
     bot.send_message(user_id, "Комментарии к заказу?")  # Ваш вопрос о комментариях к заказу
     bot.register_next_step_handler(message, save_cargo_info, bot)
+
+    # Удаляем предыдущий вопрос и ответ
+    delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
 def save_cargo_info(message, bot):
@@ -219,5 +271,3 @@ def save_cargo_info(message, bot):
 
     add_data.add_cargo_to_google_sheets(**cargo_info, bot=bot)
     bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")
-
-
