@@ -31,9 +31,9 @@ def start_driver(call, bot):
         bot.register_next_step_handler(call.message, dialog.ask_phone, bot)
 
 
-def handle_broker_role(call, bot):
-    user_id = call.from_user.id
-    chat_id = call.message.chat.id  # Получаем ID чата, где было вызвано сообщение
+def handle_broker_role(message, bot):
+    user_id = message.from_user.id
+    chat_id = message.chat.id  # Получаем ID чата, где было вызвано сообщение
 
     # Создаем кнопку для перенаправления на сайт Google
     markup = types.InlineKeyboardMarkup(row_width=1)
@@ -48,7 +48,8 @@ def handle_broker_role(call, bot):
                        reply_markup=markup)
 
     # Удаляем сообщение пользователя, которое вызвало метод
-    bot.delete_message(chat_id, call.message.message_id)
+    bot.delete_message(chat_id, message.message_id)
+
 
 
 

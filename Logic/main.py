@@ -40,8 +40,8 @@ def broker(message):
 
 
 @bot.message_handler(func=lambda message: message.text == "Диспетчерам")
-def handle_broker_role(call):
-    handlers.handle_broker_role(call, bot)
+def handle_broker_role(message):
+    handlers.handle_broker_role(message, bot)
 
 
 @bot.message_handler(func=lambda message: message.text == "Перевозчикам")
