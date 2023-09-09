@@ -39,6 +39,12 @@ def back_cargo(call):
 
     # Удалите предыдущее сообщение
     bot.delete_message(chat_id_to_delete, message_id_to_delete)
+
+    # Отправьте сообщение "Прерывание" и удалите его немедленно
+    bot.send_message(chat_id_to_delete, "Прерывание")
+    bot.delete_message(chat_id_to_delete, message_id_to_delete + 1)  # Удалите сообщение "Прерывание"
+
+
 @bot.message_handler(commands=['broker1111'])
 def broker(message):
     handlers.broker(message, bot)
