@@ -11,7 +11,7 @@ def new_cargo_response(from_location, to_location, distance, weight, volume, com
                     f"{comments}\n\n" \
                     f"💵 <b>СТАВКА ₽:</b> {payment}\n\n" \
                     f"📞 <b>ДИСПЕТЧЕР:</b> @Safron195"
-    return new_cargруo_str
+    return new_cargo_str
 
 
 
