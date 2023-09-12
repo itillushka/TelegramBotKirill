@@ -68,7 +68,7 @@ def handle_driver_role(call, bot):
         markup.add(my_data_button, view_cargo_button, view_broker_button, view_history_button)
 
         # bot.send_message(user_id, "Добро пожаловать в меню водителя!", reply_markup=markup)
-        with open(user_dict.CARGO_LIST_PHOTO, 'rb') as photo:
+        with open(user_dict.DRIVER_MENU_PHOTO, 'rb') as photo:
             bot.send_photo(user_id, photo, caption="Добро пожаловать в меню водителя!", reply_markup=markup)
 
         # Удаляем сообщение пользователя, которое вызвало метод
