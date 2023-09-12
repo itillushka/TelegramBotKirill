@@ -51,12 +51,9 @@ def handle_broker_role(message, bot):
     bot.delete_message(chat_id, message.message_id)
 
 
-
-
-def handle_driver_role(call, bot):
+def handle_driver_role(call, chat_id, bot):
     user_id = call.from_user.id
     registered, user_role = user_utils.is_user_registered(user_id)
-    chat_id = call.chat.id  # Получаем ID чата, где было вызвано сообщение
 
     if registered and user_role == "Водитель":
 
@@ -203,7 +200,8 @@ def handle_driver_choice(call, bot):
                                f"Telegram: {broker_data['telegram']}"'''
                     response = bot_responses.broker_data_response(broker_data)
                     with open(user_dict.BROKER_PHOTO, 'rb') as photo:
-                        bot.send_photo(user_id, photo, caption=response, reply_markup=phone_buttons_markup, parse_mode='HTML')
+                        bot.send_photo(user_id, photo, caption=response, reply_markup=phone_buttons_markup,
+                                       parse_mode='HTML')
                         # Удаление меню
                         bot.delete_message(user_id, call.message.message_id)
 

@@ -31,7 +31,9 @@ def back(call):
     bot.delete_message(chat_id_to_delete, message_id_to_delete)
 
     # Затем вызовите другой метод
-    handlers.handle_driver_role(call, bot)
+    chat_id = call.message.chat.id
+    handlers.handle_driver_role(call, chat_id, bot)
+
 
 @bot.callback_query_handler(func=lambda call: call.data in ["back_cargo"])
 def back_cargo(call):
@@ -56,9 +58,9 @@ def back_cargo(call):
         # Если пользователь не начинал диалог, просто удаляем сообщение
         bot.delete_message(chat_id_to_delete, message_id_to_delete)
 
+
 # Где-то в коде, когда пользователь начинает диалог, устанавливаем флаг "started_dialog" в данных пользователя:
 # user_dict.user_data[user_id]["started_dialog"] = True
-
 
 
 @bot.message_handler(commands=['broker1111'])
@@ -73,7 +75,8 @@ def handle_broker_role(message):
 
 @bot.message_handler(func=lambda message: message.text == "Перевозчикам")
 def handle_driver_role(call):
-    handlers.handle_driver_role(call, bot)
+    chat_id = call.chat.id
+    handlers.handle_driver_role(call, chat_id, bot)
 
 
 @bot.message_handler(func=lambda message: message.text == "Сообщество")
