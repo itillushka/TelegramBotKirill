@@ -6,7 +6,7 @@ driver_data = {}
 
 # Пути ко всем изображениям
 CARGO_PHOTO = "resources/Frame 32.png"
-CARGO_LIST_PHOTO = "resources/Frame 33.png"
+CARGO_LIST_PHOTO = "resources/Frame 42.png"
 START_PHOTO = "resources/Frame 34.png"
 REGISTRATION_PHOTO = "resources/Frame 35.png"
 USER_DATA_PHOTO = "resources/Frame 36.png"
