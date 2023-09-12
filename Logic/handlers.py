@@ -51,7 +51,7 @@ def handle_broker_role(message, bot):
     bot.delete_message(chat_id, message.message_id)
 
 
-def handle_driver_role(call, chat_id, bot):
+def handle_driver_role(call, chat_id, message_id, bot):
     user_id = call.from_user.id
     registered, user_role = user_utils.is_user_registered(user_id)
 
@@ -69,7 +69,7 @@ def handle_driver_role(call, chat_id, bot):
             bot.send_photo(user_id, photo, caption="Добро пожаловать в меню водителя!", reply_markup=markup)
 
         # Удаляем сообщение пользователя, которое вызвало метод
-        bot.delete_message(chat_id, call.message_id)
+        bot.delete_message(chat_id, message_id)
 
     elif registered and user_role == "Брокер":
         bot.send_message(user_id, "Вы не имеете доступа к роли Перевозчика.")

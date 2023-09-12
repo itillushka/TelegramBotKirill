@@ -32,7 +32,8 @@ def back(call):
 
     # Затем вызовите другой метод
     chat_id = call.message.chat.id
-    handlers.handle_driver_role(call, chat_id, bot)
+    message_id = call.message.message_id
+    handlers.handle_driver_role(call, chat_id, message_id, bot)
 
 
 @bot.callback_query_handler(func=lambda call: call.data in ["back_cargo"])
@@ -76,7 +77,8 @@ def handle_broker_role(message):
 @bot.message_handler(func=lambda message: message.text == "Перевозчикам")
 def handle_driver_role(call):
     chat_id = call.chat.id
-    handlers.handle_driver_role(call, chat_id, bot)
+    message_id = call.message_id
+    handlers.handle_driver_role(call, chat_id, message_id, bot)
 
 
 @bot.message_handler(func=lambda message: message.text == "Сообщество")
