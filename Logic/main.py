@@ -32,7 +32,7 @@ def back(call):
 
     # Затем вызовите другой метод
     chat_id = call.message.chat.id
-    message_id = call.message.message_id
+    message_id = 0
     handlers.handle_driver_role(call, chat_id, message_id, bot)
 
 
