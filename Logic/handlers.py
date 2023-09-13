@@ -78,7 +78,7 @@ def handle_driver_role(call, chat_id, message_id, bot):
         start_button = types.InlineKeyboardButton("Начать", callback_data="start_driver")
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(start_button)
-        with open(user_dict.REGISTRATION_PHOTO, 'rb') as photo:
+        with open(user_dict.DRIVER_REG_PHOTO, 'rb') as photo:
             bot.send_photo(user_id, photo, caption="Пожалуйста, ответьте на несколько вопросов:", reply_markup=markup)
 
 
