@@ -8,11 +8,11 @@ import user_dict
 TOKEN = '6633230318:AAEPmoWn2SgZsenyflbzZEP2hJ_Fgg6-diM'
 bot = telebot.TeleBot(TOKEN)
 # Путь к файлу JSON с учетными данными для доступа к Google Таблицам
-JSON_PATH = "Logic/credentials.json"
+
 
 # Создаем объект для работы с Google Таблицами
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name(JSON_PATH, scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name(user_dict.JSON_PATH, scope)
 client = gspread.authorize(creds)
 
 

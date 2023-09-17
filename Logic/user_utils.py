@@ -1,20 +1,16 @@
 import gspread
+import user_dict
 from oauth2client.service_account import ServiceAccountCredentials
 
-JSON_PATH = 'credentials.json'
-SPREADSHEET_ID_USER_DATA = '1Ru0mMLA8L6GyTPjvrFXIZ-dGN6u_CaHVsZiHVJo9R6w'
-SPREADSHEET_ID_CARGO_DATA = '11bCdYF4Mt7ZJ9U9gkpKOUnMaBDIqYk3J2DoqQ4v6KFA'
-SPREADSHEET_ID_APPROVED_CARGO_DATA = '1Eph_4O0fJzbAITj98-1aigGct9YPyizM7WZ7dCDC-Pw'
-SPREADSHEET_ID_BROKER_DATA = '11kHyKE8x1xfMzojRvofHKZkUoK7NIHNhetwhWPlhrV8'
-SPREADSHEET_ID_CARGO_HISTORY_DATA = '13ljzO69p1gdKyd7p9QbigiPT_L06R5Qf2GLgBsoGCKI'
+
 
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-creds = ServiceAccountCredentials.from_json_keyfile_name(JSON_PATH, scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name(user_dict.JSON_PATH, scope)
 client = gspread.authorize(creds)
 
 
 def is_user_registered(user_id):
-    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
+    sheet = client.open_by_key(user_dict.SPREADSHEET_ID_USER_DATA).get_worksheet(0)
     user_ids = sheet.col_values(1)[1:]
 
     if str(user_id) in user_ids:
@@ -26,7 +22,7 @@ def is_user_registered(user_id):
 
 
 def get_user_data(user_id):
-    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
+    sheet = client.open_by_key(user_dict.SPREADSHEET_ID_USER_DATA).get_worksheet(0)
     user_cell = sheet.find(str(user_id))
     if user_cell:
         user_row = user_cell.row
@@ -52,7 +48,7 @@ def get_user_data(user_id):
 
 
 def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_weight, cargo_volume):
-    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
+    sheet = client.open_by_key(user_dict.SPREADSHEET_ID_USER_DATA).get_worksheet(0)
     driver_ids = []
 
     for idx, row in enumerate(sheet.get_all_values(), start=1):  # Пропускаем заголовок
@@ -92,7 +88,7 @@ def get_drivers_in_city_with_loadtype_weight_and_volume(city, loadtype, cargo_we
 
 
 def get_broker_data(broker_id):
-    sheet = client.open_by_key(SPREADSHEET_ID_BROKER_DATA).get_worksheet(0)
+    sheet = client.open_by_key(user_dict.SPREADSHEET_ID_BROKER_DATA).get_worksheet(0)
     broker_ids = sheet.col_values(1)[1:]
 
     if broker_id in broker_ids:
@@ -109,7 +105,7 @@ def get_broker_data(broker_id):
 
 
 def get_cargo_history(user_id):
-    sheet = client.open_by_key(SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
+    sheet = client.open_by_key(user_dict.SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
     cargo_history_data = sheet.get_all_values()
 
     cargo_history = {}  # Словарь для хранения истории грузов {cargo_id: status}
@@ -125,12 +121,12 @@ def get_cargo_history(user_id):
 
 
 def get_cargo_details(cargo_id):
-    sheet = client.open_by_key(SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)
+    sheet = client.open_by_key(user_dict.SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)
     cargo_data = sheet.get_all_values()
 
     for row in cargo_data[1:]:  # Пропускаем заголовок
         if row[0] == cargo_id:
-            cargo_history_sheet = client.open_by_key(SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
+            cargo_history_sheet = client.open_by_key(user_dict.SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
             cargo_history_data = cargo_history_sheet.get_all_values()
 
             comments = None
@@ -150,7 +146,7 @@ def get_cargo_details(cargo_id):
 
 
 def get_cargo_history_status(cargo_id):
-    sheet = client.open_by_key(SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
+    sheet = client.open_by_key(user_dict.SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
     cargo_history_data = sheet.get_all_values()
 
     for row in cargo_history_data[1:]:  # Пропускаем заголовок
@@ -161,7 +157,7 @@ def get_cargo_history_status(cargo_id):
 
 
 def check_if_cargo_already_selected(user_id, cargo_id):
-    sheet = client.open_by_key(SPREADSHEET_ID_USER_DATA).get_worksheet(0)
+    sheet = client.open_by_key(user_dict.SPREADSHEET_ID_USER_DATA).get_worksheet(0)
     user_cell = sheet.find(str(user_id))
     if user_cell:
         user_row = user_cell.row
@@ -176,7 +172,7 @@ def check_if_cargo_already_selected(user_id, cargo_id):
 
 
 def get_recent_cargos(user_id, count):
-    sheet = client.open_by_key(SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
+    sheet = client.open_by_key(user_dict.SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
     cargo_history_data = sheet.get_all_values()
 
     recent_cargos = {}  # Словарь для хранения последних грузов {cargo_id: status}
@@ -193,7 +189,7 @@ def get_recent_cargos(user_id, count):
 
 
 def get_unpaid_cargos(user_id):
-    sheet = client.open_by_key(SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
+    sheet = client.open_by_key(user_dict.SPREADSHEET_ID_CARGO_HISTORY_DATA).get_worksheet(0)
     cargo_history_data = sheet.get_all_values()
 
     unpaid_cargos = {}  # Словарь для хранения неоплаченных грузов {cargo_id: status}

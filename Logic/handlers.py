@@ -121,7 +121,7 @@ def handle_driver_choice(call, bot):
             car_dimensions = car_volume.split('/')
             car_dimensions = [float(dim) for dim in car_dimensions]
 
-            sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_APPROVED_CARGO_DATA).get_worksheet(0)
+            sheet = user_utils.client.open_by_key(user_dict.SPREADSHEET_ID_APPROVED_CARGO_DATA).get_worksheet(0)
 
             cargo_buttons = []
             cargo_data = sheet.get_all_values()[1:]  # Пропускаем заголовок

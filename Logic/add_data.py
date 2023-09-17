@@ -5,7 +5,7 @@ import bot_responses
 
 
 def add_chosen_cargo(user_id, chosen_cargo_ids):
-    sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_USER_DATA).get_worksheet(0)
+    sheet = user_utils.client.open_by_key(user_dict.SPREADSHEET_ID_USER_DATA).get_worksheet(0)
     user_cell = sheet.find(str(user_id))
     if user_cell:
         user_row = user_cell.row
@@ -25,7 +25,7 @@ def add_chosen_cargo(user_id, chosen_cargo_ids):
 
 
 def add_driver_to_google_sheets(user_id, **data):
-    sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_USER_DATA).get_worksheet(0)
+    sheet = user_utils.client.open_by_key(user_dict.SPREADSHEET_ID_USER_DATA).get_worksheet(0)
 
     driver_info = [
         user_id,
@@ -48,7 +48,7 @@ def add_driver_to_google_sheets(user_id, **data):
 
 def add_cargo_to_google_sheets(from_location, to_location, distance, volume, weight, loadtype, description, payment, paymenttype,
                                contacts, comments, bot):
-    sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)  # Открываем лист
+    sheet = user_utils.client.open_by_key(user_dict.SPREADSHEET_ID_CARGO_DATA).get_worksheet(0)  # Открываем лист
 
     # Получаем текущее количество строк в таблице
     num_rows = len(sheet.get_all_values()) + 1
@@ -63,7 +63,7 @@ def add_cargo_to_google_sheets(from_location, to_location, distance, volume, wei
 
 def update_cargo_notifications(call, bot):
     user_id = call.from_user.id
-    sheet = user_utils.client.open_by_key(user_utils.SPREADSHEET_ID_APPROVED_CARGO_DATA).get_worksheet(0)
+    sheet = user_utils.client.open_by_key(user_dict.SPREADSHEET_ID_APPROVED_CARGO_DATA).get_worksheet(0)
     cargo_data = sheet.get_all_values()
 
     for row in cargo_data[1:]:  # Пропускаем заголовок
