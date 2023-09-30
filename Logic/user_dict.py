@@ -5,6 +5,9 @@ user_data = {}
 chosen_cargo = {}
 driver_data = {}
 
+driver_menu_messages = {}
+broker_menu_messages = {}
+cargo_menu_messages = {}
 
 JSON_PATH = 'credentials.json'
 SPREADSHEET_ID_USER_DATA = '1Ru0mMLA8L6GyTPjvrFXIZ-dGN6u_CaHVsZiHVJo9R6w'

@@ -1,4 +1,4 @@
-from telebot import types
+from aiogram import types
 
 import add_data
 import dialog
@@ -7,7 +7,7 @@ import user_utils
 import bot_responses
 
 
-def start(message, bot):
+async def start(message, bot):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     broker_button = types.KeyboardButton("Перевозчикам")
     driver_button = types.KeyboardButton("Диспетчерам")
@@ -16,24 +16,28 @@ def start(message, bot):
     markup.add(broker_button, driver_button, cargo_button, community_button)
 
     with open(user_dict.START_PHOTO, 'rb') as photo:
-        bot.send_photo(message.chat.id, photo, caption="Приветствую в нашем боте! Пожалуйста выберите раздел:",
+        await bot.send_photo(message.chat.id, photo, caption="Приветствую в нашем боте! Пожалуйста выберите раздел:",
                        reply_markup=markup)
 
 
-def start_driver(call, bot):
+async def start_driver(call, bot):
     user_id = call.from_user.id
     status = call.data
     if status == "start_driver":
         user_dict.user_data[user_id] = {"role": "Водитель"}
         user_dict.driver_data[user_id] = {}  # Создаем пустой словарь для данных водителя
-        bot.send_message(user_id, "Отлично! Пожалуйста, ответьте на несколько вопросов.")
-        bot.send_message(user_id, "Ваше полное имя?")
-        bot.register_next_step_handler(call.message, dialog.ask_phone, bot)
+        await bot.send_message(user_id, "Отлично! Пожалуйста, ответьте на несколько вопросов.")
+        await bot.send_message(user_id, "Ваше полное имя?")
+        await dialog.ask_phone(call.message, bot)
 
 
-def handle_broker_role(message, bot):
+async def handle_broker_role(message, bot):
     user_id = message.from_user.id
     chat_id = message.chat.id  # Получаем ID чата, где было вызвано сообщение
+
+    # Проверяем, есть ли предыдущее меню, и удаляем его, если есть
+    if user_id in user_dict.broker_menu_messages:
+        await bot.delete_message(chat_id, user_dict.broker_menu_messages[user_id])
 
     # Создаем кнопку для перенаправления на сайт Google
     markup = types.InlineKeyboardMarkup(row_width=1)
@@ -42,20 +46,24 @@ def handle_broker_role(message, bot):
 
     # Отправляем сообщение с кнопкой
     with open(user_dict.REGISTRATION_PHOTO, 'rb') as photo:
-        bot.send_photo(user_id, photo,
+        message_out = await bot.send_photo(user_id, photo,
                        caption="Спасибо, что хотите пополнить нашу команду диспетчеров!\nПрошу вас заполнить Гугл форму, "
                                "чтобы мы узнали о вас побольше!\nДля заполнения формы, перейдите по ссылке ниже:",
                        reply_markup=markup)
+        user_dict.broker_menu_messages[user_id] = message_out.message_id
 
     # Удаляем сообщение пользователя, которое вызвало метод
-    bot.delete_message(chat_id, message.message_id)
+    await bot.delete_message(chat_id, message.message_id)
 
 
-def handle_driver_role(call, chat_id, message_id, bot):
+async def handle_driver_role(call, chat_id, message_id, bot):
     user_id = call.from_user.id
     registered, user_role = user_utils.is_user_registered(user_id)
 
     if registered and user_role == "Водитель":
+        # Проверяем, есть ли предыдущее меню, и удаляем его, если есть
+        if user_id in user_dict.driver_menu_messages and message_id != 0:
+            await bot.delete_message(chat_id, user_dict.driver_menu_messages[user_id])
 
         markup = types.InlineKeyboardMarkup(row_width=1)
         my_data_button = types.InlineKeyboardButton("Мои данные", callback_data="my_data")
@@ -64,30 +72,30 @@ def handle_driver_role(call, chat_id, message_id, bot):
         view_history_button = types.InlineKeyboardButton("История заказов", callback_data="view_history")
         markup.add(my_data_button, view_cargo_button, view_broker_button, view_history_button)
 
-        # bot.send_message(user_id, "Добро пожаловать в меню водителя!", reply_markup=markup)
+        # Отправляем новое меню и сохраняем его айди
         with open(user_dict.DRIVER_MENU_PHOTO, 'rb') as photo:
-            bot.send_photo(user_id, photo, caption="Добро пожаловать в меню водителя!", reply_markup=markup)
+            message = await bot.send_photo(user_id, photo, caption="Добро пожаловать в меню водителя!", reply_markup=markup)
+            user_dict.driver_menu_messages[user_id] = message.message_id
 
         # Удаляем сообщение пользователя, которое вызвало метод
         if message_id > 1:
-            bot.delete_message(chat_id, message_id)
+            await bot.delete_message(chat_id, message_id)
 
     elif registered and user_role == "Брокер":
-        bot.send_message(user_id, "Вы не имеете доступа к роли Перевозчика.")
+        await bot.send_message(user_id, "Вы не имеете доступа к роли Перевозчика.")
     elif not registered:
         start_button = types.InlineKeyboardButton("Начать", callback_data="start_driver")
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(start_button)
         with open(user_dict.DRIVER_REG_PHOTO, 'rb') as photo:
-            bot.send_photo(user_id, photo, caption="Пожалуйста, ответьте на несколько вопросов:", reply_markup=markup)
+            await bot.send_photo(user_id, photo, caption="Пожалуйста, ответьте на несколько вопросов:", reply_markup=markup)
 
 
 def is_single_number(volume_str):
     # Проверяем, содержит ли строка символ "/"
     return '/' not in volume_str
 
-
-def handle_driver_choice(call, bot):
+async def handle_driver_choice(call, bot):
     user_id = call.from_user.id
     choice = call.data
 
@@ -100,14 +108,12 @@ def handle_driver_choice(call, bot):
             markup.add(edit_button, back_button)
             response = user_data_get
 
-            # bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=response,
-            #                     reply_markup=markup)
             with open(user_dict.USER_DATA_PHOTO, 'rb') as photo:
-                bot.send_photo(user_id, photo, caption=response, reply_markup=markup, parse_mode='HTML')
+                await bot.send_photo(user_id, photo, caption=response, reply_markup=markup, parse_mode='HTML')
                 # Удаление меню
-                bot.delete_message(user_id, call.message.message_id)
+                await bot.delete_message(user_id, call.message.message_id)
         else:
-            bot.send_message(user_id, "🚫 Ваши данные не найдены.")
+            await bot.send_message(user_id, "🚫 Ваши данные не найдены.")
     elif choice == "view_cargo":
         user_data = user_utils.get_user_data(user_id)
         if user_data and user_data["role"] == "Водитель":
@@ -178,11 +184,11 @@ def handle_driver_choice(call, bot):
             cargo_buttons_markup.add(*cargo_buttons, back_button)
 
             with open(user_dict.CARGO_LIST_PHOTO, 'rb') as photo:
-                bot.send_photo(user_id, photo, caption="Выберите груз:", reply_markup=cargo_buttons_markup)
+                await bot.send_photo(user_id, photo, caption="Выберите груз:", reply_markup=cargo_buttons_markup)
                 # Удаление меню
-                bot.delete_message(user_id, call.message.message_id)
+                await bot.delete_message(user_id, call.message.message_id)
         else:
-            bot.send_message(user_id, "У вас нет доступа к выбору грузов.")
+            await bot.send_message(user_id, "У вас нет доступа к выбору грузов.")
     elif choice == "view_broker":
         user_data = user_utils.get_user_data(user_id)
         if user_data and user_data["role"] == "Водитель":
@@ -201,20 +207,20 @@ def handle_driver_choice(call, bot):
                                f"Telegram: {broker_data['telegram']}"'''
                     response = bot_responses.broker_data_response(broker_data)
                     with open(user_dict.BROKER_PHOTO, 'rb') as photo:
-                        bot.send_photo(user_id, photo, caption=response, reply_markup=phone_buttons_markup,
+                        await bot.send_photo(user_id, photo, caption=response, reply_markup=phone_buttons_markup,
                                        parse_mode='HTML')
                         # Удаление меню
-                        bot.delete_message(user_id, call.message.message_id)
+                        await bot.delete_message(user_id, call.message.message_id)
 
                 else:
-                    bot.send_message(user_id, "Диспетчер не найден.")
+                    await bot.send_message(user_id, "Диспетчер не найден.")
             else:
-                bot.send_message(user_id, "Извините, к вам еще не привязан диспетчер, подождите.")
+                await bot.send_message(user_id, "Извините, к вам еще не привязан диспетчер, подождите.")
         else:
-            bot.send_message(user_id, "У вас нет доступа к данным диспетчера.")
+            await bot.send_message(user_id, "У вас нет доступа к данным диспетчера.")
 
 
-def handle_cargo_choice(call, bot):
+async def handle_cargo_choice(call, bot):
     user_id = call.from_user.id
     cargo_id = call.data.split("_")[1]  # Получаем идентификатор груза из callback_data
 
@@ -232,11 +238,11 @@ def handle_cargo_choice(call, bot):
 
         if not cargo_already_chosen and not cargo_already_selected:
             user_dict.chosen_cargo[user_id].append(cargo_id)
-            bot.answer_callback_query(call.id, text="Груз добавлен в выбранные! ✅")
+            await bot.answer_callback_query(call.id, text="Груз добавлен в выбранные! ✅")
         elif cargo_already_chosen:
-            bot.answer_callback_query(call.id, text="Этот груз уже выбран в текущей сессии! ❌")
+            await bot.answer_callback_query(call.id, text="Этот груз уже выбран в текущей сессии! ❌")
         elif cargo_already_selected:
-            bot.answer_callback_query(call.id, text="Этот груз уже был выбран ранее! ❌")
+            await bot.answer_callback_query(call.id, text="Этот груз уже был выбран ранее! ❌")
 
 
 def handle_finish(call, bot):
@@ -253,7 +259,7 @@ def handle_finish(call, bot):
         bot.send_message(user_id, "Вы еще не выбрали грузы. 🚫")
 
 
-def handle_cargo(call, bot):
+async def handle_cargo(call, bot):
     user_id = call.from_user.id
     user_dict.user_data[user_id] = {}
     chat_id = call.chat.id  # Получаем ID чата, где было вызвано сообщение
@@ -264,13 +270,13 @@ def handle_cargo(call, bot):
     markup.add(next_button, back_button)
 
     with open(user_dict.CARGO_PHOTO, 'rb') as photo:
-        bot.send_photo(user_id, photo, caption="Выберите опцию", reply_markup=markup)
+        await bot.send_photo(user_id, photo, caption="Выберите опцию", reply_markup=markup)
 
     # Удаляем сообщение пользователя, которое вызвало метод
-    bot.delete_message(chat_id, call.message_id)
+    await bot.delete_message(chat_id, call.message_id)
 
 
-def handle_history(call, bot):
+async def handle_history(call, bot):
     user_id = call.from_user.id
     user_data = user_utils.get_user_data(user_id)
 
@@ -295,22 +301,23 @@ def handle_history(call, bot):
 
         markup.add(recent_button, unpaid_button, *cargo_buttons, back_button)
         with open(user_dict.CARGO_HISTORY_PHOTO, 'rb') as photo:
-            bot.send_photo(user_id, photo, caption="📚 История заказов:", reply_markup=markup)
+            await bot.send_photo(user_id, photo, caption="📚 История заказов:", reply_markup=markup)
             # Удаление меню
-            bot.delete_message(user_id, call.message.message_id)
+            await bot.delete_message(user_id, call.message.message_id)
 
     else:
-        bot.send_message(user_id, "У вас нет доступа к истории заказов.")
+        await bot.send_message(user_id, "У вас нет доступа к истории заказов.")
 
 
-def handle_cargo_questions(call, bot):
+async def handle_cargo_questions(call, bot):
     user_id = call.from_user.id
-    bot.send_message(user_id, "Введите данные о грузе.\n\n1. Откуда?")
+    await bot.send_message(user_id, "Введите данные о грузе.\n\n1. Откуда?")
+    await bot.delete_message(user_id, call.message.message_id)
     user_dict.user_data[user_id]["started_dialog"] = True
     bot.register_next_step_handler(call.message, dialog.ask_cargo_from, bot)
 
 
-def handle_history_details(call, bot):
+async def handle_history_details(call, bot):
     user_id = call.from_user.id
     cargo_id = call.data.split("_")[1]  # Получаем идентификатор груза из callback_data
     cargo_details = user_utils.get_cargo_details(cargo_id)
@@ -322,12 +329,12 @@ def handle_history_details(call, bot):
         response += f"Город доставки: {cargo_details['to_location']}\n"
         response += f"Статус: {cargo_history_status}\n"
         response += f"Описание: {cargo_details['comments']}\n"
-        bot.send_message(user_id, response)
+        await bot.send_message(user_id, response)
     else:
-        bot.send_message(user_id, f"Информация о заказе {cargo_id} не найдена.")
+        await bot.send_message(user_id, f"Информация о заказе {cargo_id} не найдена.")
 
 
-def handle_recent_cargos(call, bot):
+async def handle_recent_cargos(call, bot):
     user_id = call.from_user.id
     # Retrieve the last 7 cargos for the driver (modify as needed)
     recent_cargos = user_utils.get_recent_cargos(user_id, 7)
@@ -340,10 +347,10 @@ def handle_recent_cargos(call, bot):
             response += f"Куда: {cargo_details['to_location']}\n"
             response += f"Комментарии: {cargo_details['comments']}\n"
             response += f"Статус: {cargo_status}\n\n"
-    bot.send_message(user_id, response)
+    await bot.send_message(user_id, response)
 
 
-def handle_unpaid_cargos(call, bot):
+async def handle_unpaid_cargos(call, bot):
     user_id = call.from_user.id
     # Retrieve all unpaid cargos for the driver
     unpaid_cargos = user_utils.get_unpaid_cargos(user_id)
@@ -356,30 +363,30 @@ def handle_unpaid_cargos(call, bot):
             response += f"Куда: {cargo_details['to_location']}\n"
             response += f"Комментарии: {cargo_details['comments']}\n"
             response += f"Статус: {cargo_status}\n\n"
-    bot.send_message(user_id, response)
+    await bot.send_message(user_id, response)
 
 
-def handle_community(message, bot):
+async def handle_community(message, bot):
     chat_id = message.chat.id  # Получаем ID чата, где было вызвано сообщение
     community_link = "https://t.me/+j7plDmEkx9wyN2Iy"  # Ссылка на сообщество
-    bot.send_message(message.chat.id, f"Добро пожаловать в наше сообщество!\n{community_link}")
+    await bot.send_message(message.chat.id, f"Добро пожаловать в наше сообщество!\n{community_link}")
 
     # Удаляем сообщение пользователя, которое вызвало метод
-    bot.delete_message(chat_id, message.message_id)
+    await bot.delete_message(chat_id, message.message_id)
 
 
-def broker(message, bot):
+async def broker(message, bot):
     markup = types.InlineKeyboardMarkup()
     update_button = types.InlineKeyboardButton("Обновить рассылку", callback_data="update_notifications")
     markup.add(update_button)
-    bot.send_message(message.chat.id, "Админ панель", reply_markup=markup)
+    await bot.send_message(message.chat.id, "Админ панель", reply_markup=markup)
 
 
-def handle_update_notifications(call, bot):
+async def handle_update_notifications(call, bot):
     add_data.update_cargo_notifications(call, bot)
-    bot.send_message(call.from_user.id, "Рассылка обновлена!")
+    await bot.send_message(call.from_user.id, "Рассылка обновлена!")
 
 
-def handle_edit_data(call, bot):
+async def handle_edit_data(call, bot):
     user_id = call.from_user.id
-    bot.send_message(user_id, "Пожалуйста обратитесь к администрации за этими контактными данными:")
+    await bot.send_message(user_id, "Пожалуйста обратитесь к администрации за этими контактными данными:")

@@ -1,152 +1,121 @@
-import gspread
-import telebot
+from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from oauth2client.service_account import ServiceAccountCredentials
+import gspread
 
 import handlers
 import user_dict
 
 TOKEN = '6633230318:AAEPmoWn2SgZsenyflbzZEP2hJ_Fgg6-diM'
-bot = telebot.TeleBot(TOKEN)
+bot = Bot(token=TOKEN)
+
 # Путь к файлу JSON с учетными данными для доступа к Google Таблицам
-
-
-# Создаем объект для работы с Google Таблицами
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 creds = ServiceAccountCredentials.from_json_keyfile_name(user_dict.JSON_PATH, scope)
 client = gspread.authorize(creds)
 
+# Создаем объект диспетчера (Dispatcher) и подключаем к нему логирование
+dp = Dispatcher(bot)
+dp.middleware.setup(LoggingMiddleware())
 
 # Обработчик команды /start
-@bot.message_handler(commands=['start', 'menu'])
-def start(message):
-    handlers.start(message, bot)
+@dp.message_handler(commands=['start', 'menu'])
+async def start(message: types.Message):
+    await handlers.start(message, bot)
 
-
-@bot.callback_query_handler(func=lambda call: call.data in ["back"])
-def back(call):
+@dp.callback_query_handler(lambda call: call.data in ["back"])
+async def back(call: types.CallbackQuery):
     chat_id_to_delete = call.message.chat.id
     message_id_to_delete = call.message.message_id
 
-    # Удалите предыдущее сообщение
-    bot.delete_message(chat_id_to_delete, message_id_to_delete)
+    await bot.delete_message(chat_id_to_delete, message_id_to_delete)
 
-    # Затем вызовите другой метод
     chat_id = call.message.chat.id
     message_id = 0
-    handlers.handle_driver_role(call, chat_id, message_id, bot)
+    await handlers.handle_driver_role(call, chat_id, message_id, bot)
 
-
-@bot.callback_query_handler(func=lambda call: call.data in ["back_cargo"])
-def back_cargo(call):
+@dp.callback_query_handler(lambda call: call.data in ["back_cargo"])
+async def back_cargo(call: types.CallbackQuery):
     user_id = call.from_user.id
     chat_id_to_delete = call.message.chat.id
     message_id_to_delete = call.message.message_id
 
-    # Проверяем, начал ли пользователь диалог
     if "started_dialog" in user_dict.user_data[user_id] and user_dict.user_data[user_id]["started_dialog"]:
-        # Удаляем предыдущее сообщение
-        bot.delete_message(chat_id_to_delete, message_id_to_delete)
-
-        # Очищаем данные пользователя и возвращаем его в начальное состояние
+        await bot.delete_message(chat_id_to_delete, message_id_to_delete)
         user_dict.user_data[user_id] = {}
-        bot.delete_message(chat_id_to_delete, message_id_to_delete + 1)
-        # Отправляем сообщение, чтобы пользователь знал, что диалог прерван
-        bot.send_message(chat_id_to_delete, "Диалог прерван. Вы вернулись в начальное состояние.")
-
-        # Очищаем обработчики следующих шагов диалога
-        bot.clear_step_handler_by_chat_id(chat_id_to_delete)
+        await bot.delete_message(chat_id_to_delete, message_id_to_delete + 1)
+        await bot.send_message(chat_id_to_delete, "Диалог прерван. Вы вернулись в начальное состояние.")
+        #bot.clear_step_handler_by_chat_id(chat_id_to_delete)
     else:
-        # Если пользователь не начинал диалог, просто удаляем сообщение
-        bot.delete_message(chat_id_to_delete, message_id_to_delete)
+        await bot.delete_message(chat_id_to_delete, message_id_to_delete)
 
+@dp.message_handler(commands=['broker1111'])
+async def broker(message: types.Message):
+    await handlers.broker(message, bot)
 
-# Где-то в коде, когда пользователь начинает диалог, устанавливаем флаг "started_dialog" в данных пользователя:
-# user_dict.user_data[user_id]["started_dialog"] = True
+@dp.message_handler(func=lambda message: message.text == "Диспетчерам")
+async def handle_broker_role(message: types.Message):
+    await handlers.handle_broker_role(message, bot)
 
-
-@bot.message_handler(commands=['broker1111'])
-def broker(message):
-    handlers.broker(message, bot)
-
-
-@bot.message_handler(func=lambda message: message.text == "Диспетчерам")
-def handle_broker_role(message):
-    handlers.handle_broker_role(message, bot)
-
-
-@bot.message_handler(func=lambda message: message.text == "Перевозчикам")
-def handle_driver_role(call):
+@dp.message_handler(func=lambda message: message.text == "Перевозчикам")
+async def handle_driver_role(call: types.Message):
     chat_id = call.chat.id
     message_id = call.message_id
-    handlers.handle_driver_role(call, chat_id, message_id, bot)
+    await handlers.handle_driver_role(call, chat_id, message_id, bot)
 
+@dp.message_handler(func=lambda message: message.text == "Сообщество")
+async def handle_community_button(message: types.Message):
+    await handlers.handle_community(message, bot)
 
-@bot.message_handler(func=lambda message: message.text == "Сообщество")
-def handle_community_button(message):
-    handlers.handle_community(message, bot)
+@dp.callback_query_handler(lambda call: call.data in ["start_driver"])
+async def start_driver(call: types.CallbackQuery):
+    await handlers.start_driver(call, bot)
 
+@dp.callback_query_handler(lambda call: call.data in ["my_data", "view_cargo", "view_broker"])
+async def handle_driver_choice(call: types.CallbackQuery):
+    await handlers.handle_driver_choice(call, bot)
 
-@bot.callback_query_handler(func=lambda call: call.data in ["start_driver"])
-def start_driver(call):
-    handlers.start_driver(call, bot)
+@dp.callback_query_handler(lambda call: call.data in ["view_history"])
+async def handle_history(call: types.CallbackQuery):
+    await handlers.handle_history(call, bot)
 
+@dp.callback_query_handler(lambda call: call.data.startswith("cargo_"))
+async def handle_cargo_choice(call: types.CallbackQuery):
+    await handlers.handle_cargo_choice(call, bot)
 
-@bot.callback_query_handler(func=lambda call: call.data in ["my_data", "view_cargo", "view_broker"])
-def handle_driver_choice(call):
-    handlers.handle_driver_choice(call, bot)
+@dp.callback_query_handler(lambda call: call.data == "finish")
+async def handle_finish(call: types.CallbackQuery):
+    await handlers.handle_finish(call, bot)
 
+@dp.message_handler(func=lambda message: message.text == "Отправить груз")
+async def handle_cargo(message: types.Message):
+    await handlers.handle_cargo(message, bot)
 
-@bot.callback_query_handler(func=lambda call: call.data in ["view_history"])
-def handle_history(call):
-    handlers.handle_history(call, bot)
+@dp.callback_query_handler(lambda call: call.data == "next_cargo")
+async def handle_cargo_questions(call: types.CallbackQuery):
+    await handlers.handle_cargo_questions(call, bot)
 
+@dp.callback_query_handler(lambda call: call.data.startswith("history_"))
+async def handle_history_details(call: types.CallbackQuery):
+    await handlers.handle_history_details(call, bot)
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith("cargo_"))
-def handle_cargo_choice(call):
-    handlers.handle_cargo_choice(call, bot)
+@dp.callback_query_handler(lambda call: call.data.startswith("recent_history"))
+async def handle_recent_cargos(call: types.CallbackQuery):
+    await handlers.handle_recent_cargos(call, bot)
 
+@dp.callback_query_handler(lambda call: call.data.startswith("unpaid_history"))
+async def handle_unpaid_cargos(call: types.CallbackQuery):
+    await handlers.handle_unpaid_cargos(call, bot)
 
-@bot.callback_query_handler(func=lambda call: call.data == "finish")
-def handle_finish(call):
-    handlers.handle_finish(call, bot)
+@dp.callback_query_handler(lambda call: call.data == "update_notifications")
+async def update_notifications(call: types.CallbackQuery):
+    await handlers.handle_update_notifications(call, bot)
 
+@dp.callback_query_handler(lambda call: call.data == "edit_data")
+async def update_notifications(call: types.CallbackQuery):
+    await handlers.handle_edit_data(call, bot)
 
-@bot.message_handler(func=lambda message: message.text == "Отправить груз")
-def handle_cargo(message):
-    handlers.handle_cargo(message, bot)
+if __name__ == '__main__':
+    from aiogram import executor
 
-
-@bot.callback_query_handler(func=lambda call: call.data == "next_cargo")
-def handle_cargo_questions(call):
-    handlers.handle_cargo_questions(call, bot)
-
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("history_"))
-def handle_history_details(call):
-    handlers.handle_history_details(call, bot)
-
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("recent_history"))
-def handle_recent_cargos(call):
-    handlers.handle_recent_cargos(call, bot)
-
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("unpaid_history"))
-def handle_unpaid_cargos(call):
-    handlers.handle_unpaid_cargos(call, bot)
-
-
-@bot.callback_query_handler(func=lambda call: call.data == "update_notifications")
-def update_notifications(call):
-    handlers.handle_update_notifications(call, bot)
-
-
-@bot.callback_query_handler(func=lambda call: call.data == "edit_data")
-def update_notifications(call):
-    handlers.handle_edit_data(call, bot)
-
-
-try:
-    bot.polling()
-except gspread.exceptions.APIError:
-    print("Отсутствие доступа к таблицам")
+    executor.start_polling(dp)
