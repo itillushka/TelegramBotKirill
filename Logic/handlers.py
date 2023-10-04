@@ -1,10 +1,13 @@
 from aiogram import types
+from aiogram.dispatcher import FSMContext
+from states import CargoData
 
 import add_data
 import dialog
 import user_dict
 import user_utils
 import bot_responses
+import config
 
 
 async def start(message, bot):
@@ -15,7 +18,7 @@ async def start(message, bot):
     community_button = types.KeyboardButton("Сообщество")
     markup.add(broker_button, driver_button, cargo_button, community_button)
 
-    with open(user_dict.START_PHOTO, 'rb') as photo:
+    with open(config.START_PHOTO, 'rb') as photo:
         await bot.send_photo(message.chat.id, photo, caption="Приветствую в нашем боте! Пожалуйста выберите раздел:",
                        reply_markup=markup)
 
@@ -45,7 +48,7 @@ async def handle_broker_role(message, bot):
     markup.add(google_button)
 
     # Отправляем сообщение с кнопкой
-    with open(user_dict.REGISTRATION_PHOTO, 'rb') as photo:
+    with open(config.REGISTRATION_PHOTO, 'rb') as photo:
         message_out = await bot.send_photo(user_id, photo,
                        caption="Спасибо, что хотите пополнить нашу команду диспетчеров!\nПрошу вас заполнить Гугл форму, "
                                "чтобы мы узнали о вас побольше!\nДля заполнения формы, перейдите по ссылке ниже:",
@@ -73,7 +76,7 @@ async def handle_driver_role(call, chat_id, message_id, bot):
         markup.add(my_data_button, view_cargo_button, view_broker_button, view_history_button)
 
         # Отправляем новое меню и сохраняем его айди
-        with open(user_dict.DRIVER_MENU_PHOTO, 'rb') as photo:
+        with open(config.DRIVER_MENU_PHOTO, 'rb') as photo:
             message = await bot.send_photo(user_id, photo, caption="Добро пожаловать в меню водителя!", reply_markup=markup)
             user_dict.driver_menu_messages[user_id] = message.message_id
 
@@ -87,13 +90,21 @@ async def handle_driver_role(call, chat_id, message_id, bot):
         start_button = types.InlineKeyboardButton("Начать", callback_data="start_driver")
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(start_button)
-        with open(user_dict.DRIVER_REG_PHOTO, 'rb') as photo:
+        with open(config.DRIVER_REG_PHOTO, 'rb') as photo:
             await bot.send_photo(user_id, photo, caption="Пожалуйста, ответьте на несколько вопросов:", reply_markup=markup)
 
 
 def is_single_number(volume_str):
     # Проверяем, содержит ли строка символ "/"
     return '/' not in volume_str
+
+def is_number(value):
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
 
 async def handle_driver_choice(call, bot):
     user_id = call.from_user.id
@@ -108,7 +119,7 @@ async def handle_driver_choice(call, bot):
             markup.add(edit_button, back_button)
             response = user_data_get
 
-            with open(user_dict.USER_DATA_PHOTO, 'rb') as photo:
+            with open(config.USER_DATA_PHOTO, 'rb') as photo:
                 await bot.send_photo(user_id, photo, caption=response, reply_markup=markup, parse_mode='HTML')
                 # Удаление меню
                 await bot.delete_message(user_id, call.message.message_id)
@@ -119,15 +130,32 @@ async def handle_driver_choice(call, bot):
         if user_data and user_data["role"] == "Водитель":
             residence_city = user_data["city"]  # Город проживания водителя
             cargo_type = user_data["loadtype"]  # Тип загрузки водителя
-            car_payload = float(user_data["payload"])
-            car_volume = user_data["dimensions"]
-            car_distance = float(user_data["distance"])
+
+            # Добавляем проверку и преобразование переменных car_payload и car_distance
+            car_payload_str = user_data.get("payload")
+            car_distance_str = user_data.get("distance")
+
+            try:
+                if car_payload_str is not None:
+                    car_payload = float(car_payload_str)
+                else:
+                    car_payload = 0.0  # Значение по умолчанию, если payload не определено
+
+                if car_distance_str is not None:
+                    car_distance = float(car_distance_str)
+                else:
+                    car_distance = 0.0  # Значение по умолчанию, если distance не определено
+            except ValueError:
+                # Если конвертация не удалась, можно установить значение по умолчанию или выполнить другие действия по вашему выбору
+                car_payload = 0.0
+                car_distance = 0.0
 
             # Разбиваем текстовое значение размерности кузова на отдельные числа
+            car_volume = user_data["dimensions"]
             car_dimensions = car_volume.split('/')
             car_dimensions = [float(dim) for dim in car_dimensions]
 
-            sheet = user_utils.client.open_by_key(user_dict.SPREADSHEET_ID_APPROVED_CARGO_DATA).get_worksheet(0)
+            sheet = user_utils.client.open_by_key(config.SPREADSHEET_ID_APPROVED_CARGO_DATA).get_worksheet(0)
 
             cargo_buttons = []
             cargo_data = sheet.get_all_values()[1:]  # Пропускаем заголовок
@@ -157,7 +185,7 @@ async def handle_driver_choice(call, bot):
                         cargo_id = row[0]
                         to_location = row[2]
                         cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",
-                                                                        callback_data=f"cargo_{cargo_id}"))
+                                                                    callback_data=f"cargo_{cargo_id}"))
                 else:
                     # В противном случае сравниваем размерности груза и кузова как ранее
                     if (
@@ -173,7 +201,7 @@ async def handle_driver_choice(call, bot):
                         cargo_id = row[0]
                         to_location = row[2]
                         cargo_buttons.append(types.InlineKeyboardButton(f"Груз: {from_location} -> {to_location}",
-                                                                        callback_data=f"cargo_{cargo_id}"))
+                                                                    callback_data=f"cargo_{cargo_id}"))
 
             # Добавляем кнопку "Готово" в конце списка грузов
             finish_button = types.InlineKeyboardButton("Готово✅", callback_data="finish")
@@ -183,7 +211,7 @@ async def handle_driver_choice(call, bot):
             back_button = types.InlineKeyboardButton("Назад", callback_data="back")
             cargo_buttons_markup.add(*cargo_buttons, back_button)
 
-            with open(user_dict.CARGO_LIST_PHOTO, 'rb') as photo:
+            with open(config.CARGO_LIST_PHOTO, 'rb') as photo:
                 await bot.send_photo(user_id, photo, caption="Выберите груз:", reply_markup=cargo_buttons_markup)
                 # Удаление меню
                 await bot.delete_message(user_id, call.message.message_id)
@@ -206,7 +234,7 @@ async def handle_driver_choice(call, bot):
                                f"Телефон: {broker_data['phone']}\n" \
                                f"Telegram: {broker_data['telegram']}"'''
                     response = bot_responses.broker_data_response(broker_data)
-                    with open(user_dict.BROKER_PHOTO, 'rb') as photo:
+                    with open(config.BROKER_PHOTO, 'rb') as photo:
                         await bot.send_photo(user_id, photo, caption=response, reply_markup=phone_buttons_markup,
                                        parse_mode='HTML')
                         # Удаление меню
@@ -269,7 +297,7 @@ async def handle_cargo(call, bot):
     next_button = types.InlineKeyboardButton("Рассчитать доставку", callback_data="next_cargo")
     markup.add(next_button, back_button)
 
-    with open(user_dict.CARGO_PHOTO, 'rb') as photo:
+    with open(config.CARGO_PHOTO, 'rb') as photo:
         await bot.send_photo(user_id, photo, caption="Выберите опцию", reply_markup=markup)
 
     # Удаляем сообщение пользователя, которое вызвало метод
@@ -300,7 +328,7 @@ async def handle_history(call, bot):
             cargo_buttons.append(types.InlineKeyboardButton("История заказов пуста.", callback_data="dummy"))
 
         markup.add(recent_button, unpaid_button, *cargo_buttons, back_button)
-        with open(user_dict.CARGO_HISTORY_PHOTO, 'rb') as photo:
+        with open(config.CARGO_HISTORY_PHOTO, 'rb') as photo:
             await bot.send_photo(user_id, photo, caption="📚 История заказов:", reply_markup=markup)
             # Удаление меню
             await bot.delete_message(user_id, call.message.message_id)
@@ -313,8 +341,11 @@ async def handle_cargo_questions(call, bot):
     user_id = call.from_user.id
     await bot.send_message(user_id, "Введите данные о грузе.\n\n1. Откуда?")
     await bot.delete_message(user_id, call.message.message_id)
-    user_dict.user_data[user_id]["started_dialog"] = True
-    bot.register_next_step_handler(call.message, dialog.ask_cargo_from, bot)
+
+    async with FSMContext(chat=call.message.chat, storage=user_dict.storage, user=call.from_user) as state:
+        state[user_id] = {"bot": bot, "started_dialog": True}
+        await state.finish()
+        await CargoData.cargo_from.set()
 
 
 async def handle_history_details(call, bot):

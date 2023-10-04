@@ -132,7 +132,54 @@ def ask_cargo_loading_type(message, bot):
     delete_previous_question_and_answer(user_id, bot, message.message_id)
 
 
-def ask_cargo_from(message, bot):
+from aiogram.dispatcher import FSMContext
+from aiogram.types import Message
+from states import CargoData  # Подставьте имя своего модуля с состояниями
+from main import dp as dp
+
+
+# Здесь начинается диалог с водителем
+@dp.message_handler(lambda message: message.text, state=CargoData.cargo_from)
+async def process_cargo_from(message: Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['cargo_from'] = message.text
+
+    await message.answer("2. Куда?")
+    await CargoData.next()
+
+
+# Здесь продолжаются обработчики для остальных шагов диалога
+@dp.message_handler(lambda message: message.text, state=CargoData.cargo_to)
+async def process_cargo_to(message: Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['cargo_to'] = message.text
+
+    await message.answer("3. Какая дистанция до места доставки (в километрах)?")
+    await CargoData.next()
+
+
+# ... Добавьте обработчики для остальных шагов аналогичным образом ...
+
+# Обработчик для завершения диалога
+@dp.message_handler(lambda message: message.text, state=CargoData.cargo_comments)
+async def process_cargo_comments(message: Message, state: FSMContext, bot):
+    async with state.proxy() as data:
+        data['cargo_comments'] = message.text
+
+        # Сохраните данные о грузе в вашей базе данных или где-либо еще
+        cargo_data = data
+
+        # В этой части можно использовать сохраненные данные
+        # Например, добавить их в Google Sheets
+        add_data.add_cargo_to_google_sheets(**cargo_data, bot=bot)
+
+        await message.answer("Спасибо! Данные о грузе сохранены.")
+
+    # Очистите состояние и завершите диалог
+    await state.finish()
+
+
+'''def ask_cargo_from(message, bot):
     user_id = message.from_user.id
     user_dict.user_data[user_id]["cargo_from"] = message.text
     bot.send_message(user_id, "2. Куда?")
@@ -270,4 +317,4 @@ def save_cargo_info(message, bot):
     }
 
     add_data.add_cargo_to_google_sheets(**cargo_info, bot=bot)
-    bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")
+    bot.send_message(user_id, "Спасибо! Данные о грузе сохранены.")'''
